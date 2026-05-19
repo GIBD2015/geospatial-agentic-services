@@ -253,13 +253,13 @@ OpenStreetMap fast-food restaurants, and PASDA hospitals, then uses
 For contribution guidance, see [CONTRIBUTING.md](CONTRIBUTING.md). For
 credential and vulnerability reporting guidance, see [SECURITY.md](SECURITY.md).
 
-## Release Hygiene
+## Repository Hygiene
 
-Use `.env.example` as the template for local credentials. Do not commit real
-API keys, downloaded datasets, generated outputs, build artifacts, or notebook
-execution outputs. The root `.gitignore` excludes the common local folders used
-by this repository, including `Data/`, `Output/`, `cache/`, test scratch
-folders, and Python build artifacts.
+Use `.env.example` as a safe template for local environment variables. Do not
+commit real API keys, downloaded datasets, generated outputs, build artifacts,
+or notebook execution outputs. The root `.gitignore` excludes common local
+folders used by this repository, including `Data/`, `Output/`, `cache/`, test
+scratch folders, virtual environments, and Python build artifacts.
 
 ## Acknowledgments
 
