@@ -1,5 +1,11 @@
 # Geospatial Agentic Services (GAS) Server
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](pyproject.toml)
+[![GAS Client on PyPI](https://img.shields.io/pypi/v/gas-client.svg)](https://pypi.org/project/gas-client/)
+[![GAS Paper](https://img.shields.io/badge/GAS-Paper-green.svg)](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence)
+[![GIBD Lab](https://img.shields.io/badge/GIBD-Lab-lightgrey.svg)](https://giscience.psu.edu/)
+
 This repository provides a concrete implementation of the server component of
 the Geospatial Agentic Services (GAS) framework. It publishes geospatial agents
 as independent web services, discoverable through
