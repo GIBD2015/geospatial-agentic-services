@@ -24,15 +24,17 @@ discovery, the shared GAS server framework, plugin-style agent publication, and
 standard task responses.
 
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 45, "rankSpacing": 70, "curve": "basis"}, "themeVariables": {"fontSize": "14px"}}}%%
-flowchart LR
-  subgraph Consumers["Service consumers"]
+%%{init: {"flowchart": {"nodeSpacing": 70, "rankSpacing": 95, "curve": "basis"}, "themeVariables": {"fontSize": "16px"}}}%%
+flowchart TB
+  subgraph Consumers["Service Consumers"]
+    direction TB
     Browser["Browser apps"]
     Notebook["Python notebooks<br/>GAS Client SDK"]
     Orchestrator["AI orchestrators<br/>workflow tools"]
   end
 
   subgraph API["Public GAS API"]
+    direction TB
     Entry["Server entry point<br/>gas_server/entrypoints/gas_server.py"]
     Capabilities["GetCapabilities<br/>capabilities.json"]
     Describe["DescribeAgent<br/>*_agent.json"]
@@ -45,26 +47,26 @@ flowchart LR
   Entry --> Router
 
   subgraph Core["Shared GAS framework"]
+    direction TB
     Registry["Service registry"]
     Publisher["Service publisher"]
     ServiceCore["Service core<br/>tasks, streaming,<br/>artifacts, responses"]
-    GeoAgent["GeoAgent<br/>base class"]
-    Schemas["JSON schemas"]
   end
 
   Router --> Registry
   Registry --> Publisher
   Publisher --> ServiceCore
-  ServiceCore --> GeoAgent
-  ServiceCore -. validates .-> Schemas
 
   subgraph Services["Published services"]
+    direction TB
     ServiceWrappers["Service wrappers<br/>one GeoAgent subclass"]
   end
 
   Publisher --> ServiceWrappers
 
   subgraph Agents["Agent implementations"]
+    direction TB
+    GeoAgent["GeoAgent base class<br/>geo_agent.py"]
     Retrieval["Data retrieval"]
     Inspection["Data inspection"]
     Projection["Map projection"]
@@ -75,22 +77,37 @@ flowchart LR
     PASDA["PASDA"]
   end
 
-  ServiceWrappers --> Agents
+  ServiceWrappers --> GeoAgent
+  GeoAgent --> Retrieval
+  GeoAgent --> Inspection
+  GeoAgent --> Projection
+  GeoAgent --> Raster
+  GeoAgent --> Vector
+  GeoAgent --> Mapping
+  GeoAgent --> SpatialStats
+  GeoAgent --> PASDA
 
   subgraph Artifacts["Generated artifacts"]
+    direction TB
     Data["Runtime artifacts<br/>Data/{agent_id}/"]
     Output["Optional workspace<br/>Output/"]
   end
 
-  Agents --> Data
-  Agents --> Output
+  Retrieval --> Data
+  Raster --> Data
+  Mapping --> Data
+  SpatialStats --> Data
+  Vector --> Output
 
   subgraph Contracts["GAS interfaces"]
+    direction TB
+    Schemas["JSON schemas<br/>gas_server/schemas/"]
     Response["Task response<br/>response, task, agent,<br/>outputs, execution,<br/>provenance, diagnostics"]
     Interfaces["Discovery documents<br/>schemas, capabilities,<br/>agent descriptions"]
   end
 
   ServiceCore --> Response
+  ServiceCore -. validates .-> Schemas
   Capabilities --> Interfaces
   Describe --> Interfaces
   Schemas --> Interfaces
