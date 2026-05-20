@@ -11,11 +11,11 @@ the Geospatial Agentic Services (GAS) framework. It publishes geospatial agents
 as independent web services, discoverable through
 `GetCapabilities` and `DescribeAgent` JSON documents.
 
-The included agents are working GAS services and implementation
-examples. Developers can use them as references for different design patterns,
-including deterministic geospatial workflows, model-assisted code generation,
-data retrieval, mapping, raster analysis, vector analysis, data inspection, and
-spatial statistics.
+The [included agents](docs/included_agents.md) are working GAS services and
+implementation examples. Developers can use them as references for different
+design patterns, including deterministic geospatial workflows, model-assisted
+code generation, data retrieval, mapping, raster analysis, vector analysis,
+data inspection, and spatial statistics.
 
 For the conceptual framework behind this implementation, please refer to the
 GAS paper: [Geospatial Agentic Services: A Framework for Interoperable

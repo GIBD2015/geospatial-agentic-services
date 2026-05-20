@@ -24,63 +24,77 @@ discovery, the shared GAS server framework, plugin-style agent publication, and
 standard task responses.
 
 ```mermaid
-flowchart TB
-  subgraph Consumers["Service Consumers"]
-    Browser["Browser applications"]
+%%{init: {"flowchart": {"nodeSpacing": 45, "rankSpacing": 70, "curve": "basis"}, "themeVariables": {"fontSize": "14px"}}}%%
+flowchart LR
+  subgraph Consumers["Service consumers"]
+    Browser["Browser apps"]
     Notebook["Python notebooks<br/>GAS Client SDK"]
-    Orchestrator["AI orchestrators<br/>workflow platforms"]
+    Orchestrator["AI orchestrators<br/>workflow tools"]
   end
 
-  Consumers -->|"HTTP JSON requests<br/>streaming events"| Entry["GAS server entry point<br/>gas_server/entrypoints/gas_server.py"]
+  subgraph API["Public GAS API"]
+    Entry["Server entry point<br/>gas_server/entrypoints/gas_server.py"]
+    Capabilities["GetCapabilities<br/>capabilities.json"]
+    Describe["DescribeAgent<br/>*_agent.json"]
+    Router["Agent task routes<br/>/agents/{agent_id}/..."]
+  end
 
-  Entry --> Capabilities["GetCapabilities<br/>gas_server/capabilities/capabilities.json"]
-  Entry --> Describe["DescribeAgent<br/>gas_server/capabilities/*_agent.json"]
-  Entry --> Router["Agent route dispatcher<br/>/agents/{agent_id}/..."]
+  Consumers --> Entry
+  Entry --> Capabilities
+  Entry --> Describe
+  Entry --> Router
 
-  subgraph Core["Shared GAS Server Framework<br/>gas_server/core/"]
-    Registry["Service registry<br/>service_registry.py"]
-    Publisher["Service publisher<br/>service_publisher.py"]
-    ServiceCore["Service core<br/>request parsing, tasks, streaming,<br/>artifact delivery, response normalization"]
-    GeoAgent["GeoAgent base class<br/>geo_agent.py"]
-    Schemas["JSON schemas<br/>gas_server/schemas/"]
+  subgraph Core["Shared GAS framework"]
+    Registry["Service registry"]
+    Publisher["Service publisher"]
+    ServiceCore["Service core<br/>tasks, streaming,<br/>artifacts, responses"]
+    GeoAgent["GeoAgent<br/>base class"]
+    Schemas["JSON schemas"]
   end
 
   Router --> Registry
   Registry --> Publisher
   Publisher --> ServiceCore
   ServiceCore --> GeoAgent
-  ServiceCore -.->|"documents and validates"| Schemas
+  ServiceCore -. validates .-> Schemas
 
-  subgraph Services["Published Agent Services<br/>gas_server/services/"]
-    ServiceWrappers["Small service wrappers<br/>register one GeoAgent subclass"]
+  subgraph Services["Published services"]
+    ServiceWrappers["Service wrappers<br/>one GeoAgent subclass"]
   end
 
   Publisher --> ServiceWrappers
 
-  subgraph Agents["Agent Implementations<br/>gas_server/agents/"]
-    Retrieval["Geospatial Data Retrieval Agent"]
-    Inspection["Geospatial Data Inspection Agent"]
-    Projection["Map Projection Agent"]
-    Raster["Raster Agent"]
-    Vector["Vector Analysis Agent"]
-    Mapping["Mapping and Web Mapping App Agents"]
-    SpatialStats["Spatial Statistics Agent"]
-    PASDA["PASDA Agent"]
+  subgraph Agents["Agent implementations"]
+    Retrieval["Data retrieval"]
+    Inspection["Data inspection"]
+    Projection["Map projection"]
+    Raster["Raster analysis"]
+    Vector["Vector analysis"]
+    Mapping["Mapping<br/>Web mapping app"]
+    SpatialStats["Spatial statistics"]
+    PASDA["PASDA"]
   end
 
   ServiceWrappers --> Agents
 
-  Agents -->|"generated artifacts"| Data["Runtime artifacts<br/>Data/{agent_id}/"]
-  Agents -->|"optional working outputs"| Output["Output workspace<br/>Output/"]
+  subgraph Artifacts["Generated artifacts"]
+    Data["Runtime artifacts<br/>Data/{agent_id}/"]
+    Output["Optional workspace<br/>Output/"]
+  end
 
-  Response["Standard task response<br/>response, task, agent, outputs,<br/>execution, provenance, reproducibility,<br/>diagnostics"]
-  Interfaces["Interoperability interfaces<br/>Capabilities, DescribeAgent,<br/>JSON schemas, task response"]
+  Agents --> Data
+  Agents --> Output
+
+  subgraph Contracts["GAS interfaces"]
+    Response["Task response<br/>response, task, agent,<br/>outputs, execution,<br/>provenance, diagnostics"]
+    Interfaces["Discovery documents<br/>schemas, capabilities,<br/>agent descriptions"]
+  end
+
   ServiceCore --> Response
   Capabilities --> Interfaces
   Describe --> Interfaces
   Schemas --> Interfaces
   Response --> Interfaces
-  ServiceCore -->|"artifact URLs or encoded artifacts"| Consumers
   Response --> Consumers
 ```
 
