@@ -109,3 +109,8 @@ Important methods:
 - `encode_dataset_file(path)`
 - `print_stream_event(event)`
 - `print_task_summary(result)`
+
+For the full SDK guide, including task modes, artifact handling, encoded input
+datasets, and service chaining patterns, see:
+
+https://github.com/GIBD2015/geospatial-agentic-services/blob/main/docs/gas_client_sdk.md

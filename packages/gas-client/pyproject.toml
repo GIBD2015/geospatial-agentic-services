@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gas-client"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python SDK for Geospatial Agentic Services (GAS)."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -39,8 +39,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://www.geospatial-agentic-services.online"
-Documentation = "https://www.geospatial-agentic-services.online"
+Homepage = "https://github.com/GIBD2015/geospatial-agentic-services"
+Documentation = "https://github.com/GIBD2015/geospatial-agentic-services/tree/main/packages/gas-client"
+Source = "https://github.com/GIBD2015/geospatial-agentic-services"
 
 [tool.setuptools]
 packages = ["gas_client"]
