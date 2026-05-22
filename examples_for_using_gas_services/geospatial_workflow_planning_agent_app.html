@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GAS Workflow Planning App</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #162032;
+      --muted: #5e6a7c;
+      --line: #d7deea;
+      --panel: #ffffff;
+      --soft: #f5f8fc;
+      --accent: #1769aa;
+      --accent-strong: #0d4f86;
+      --op: #eaf3ff;
+      --op-line: #6b93c6;
+      --data: #fff8d8;
+      --data-line: #d4a72c;
+      --goal: #bfdcff;
+      --goal-line: #2563a8;
+      --final: #dff4d8;
+      --final-line: #4b9b46;
+      --unmatched: #ffe8e8;
+      --unmatched-line: #d65a5a;
+      --edge: #52667f;
+      --red: #b42318;
+      --green: #19764a;
+      --shadow: 0 14px 38px rgba(22, 32, 50, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; min-height: 100vh; overflow: hidden; color: var(--ink); background: #edf3f8; }
+    header { height: 86px; padding: 12px 18px 16px; color: #fff; background: linear-gradient(90deg, #0e4f86, #1f78b8 55%, #28a0b6); }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; height: 100%; }
+    .header-copy { min-width: 0; }
+    h1 { margin: 0; font-size: 18px; line-height: 1.2; letter-spacing: 0; }
+    .subtitle { margin: 5px 0 0; max-width: 1040px; color: rgba(255, 255, 255, .88); font-size: 13px; line-height: 1.45; }
+    .github-link { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.42); background: rgba(255,255,255,.12); border-radius: 999px; padding: 8px 11px; font-size: 12px; font-weight: 800; }
+    .github-link:hover { background: rgba(255,255,255,.2); }
+    .github-link svg { width: 22px; height: 22px; }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(270px, 318px) minmax(620px, 1fr);
+      gap: 8px;
+      padding: 6px;
+      height: calc(100vh - 86px);
+      min-height: 0;
+      overflow: hidden;
+    }
+    main.controls-hidden { grid-template-columns: 30px minmax(0, 1fr); }
+
+    section { min-width: 0; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+    .controls { position: relative; width: 100%; height: 100%; padding: 10px; overflow-y: auto; overflow-x: hidden; }
+    .control-content { min-width: 0; }
+    main.controls-hidden .controls { padding: 0; overflow: hidden; }
+    main.controls-hidden .control-content { display: none; }
+    .sidebar-toggle {
+      position: absolute;
+      z-index: 20;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      width: 26px;
+      height: 58px;
+      padding: 0;
+      border-radius: 999px 0 0 999px;
+      border: 1px solid #b7c8db;
+      background: #ffffff;
+      color: var(--accent-strong);
+      box-shadow: 0 6px 18px rgba(22, 32, 50, .16);
+      font-size: 18px;
+      line-height: 1;
+    }
+    main.controls-hidden .sidebar-toggle { right: 1px; border-radius: 999px; }
+    .workspace { display: grid; grid-template-rows: minmax(520px, 1fr) auto; overflow: hidden; }
+
+    .section-title { margin: 0 0 10px; color: #2f3a4d; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+    label { display: block; margin: 10px 0 5px; color: #283548; font-size: 13px; font-weight: 700; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cbd4e1;
+      border-radius: 6px;
+      padding: 8px 9px;
+      font: inherit;
+      font-size: 14px;
+      min-width: 0;
+      max-width: 100%;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(23, 105, 170, .15); }
+    textarea { min-height: 86px; resize: vertical; line-height: 1.35; }
+    #serviceUrls { min-height: 52px; height: 52px; }
+    .hint { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+    .row > * { min-width: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    button {
+      border: 1px solid #b9c7d7;
+      background: #fff;
+      color: var(--ink);
+      border-radius: 6px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+    button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
+    button.primary:hover { background: var(--accent-strong); }
+    button:disabled { cursor: not-allowed; opacity: .62; }
+    .summary { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .summary strong { color: var(--ink); }
+    .warning-text { color: #8a6116; font-weight: 700; }
+
+    .status-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: #f9fbfd; }
+    .status-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 6px 10px; color: #36506d; background: #eaf1f8; border: 1px solid #cfdae7; font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #8393a8; }
+    .dot.running { background: var(--accent); box-shadow: 0 0 0 4px rgba(23, 105, 170, .14); }
+    .dot.success { background: var(--green); }
+    .dot.error { background: var(--red); }
+    .stream-panel { border-top: 1px solid var(--line); background: #fff; }
+    .stream-panel.collapsed .event-log, .stream-panel.collapsed .summary { display: none; }
+    .stream-panel.collapsed { max-height: 48px; overflow: hidden; }
+    .event-log { max-height: 180px; overflow: auto; padding: 8px 10px 10px; background: #f8fbff; color: #243247; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.45; }
+    .event { display: grid; grid-template-columns: 78px 138px 1fr; gap: 8px; padding: 5px 0; border-bottom: 1px solid #e5edf6; }
+    .event-time { color: #5c7190; }
+    .event-kind { color: #155f9b; font-weight: 800; }
+    .event-kind.error, .event-kind.task_failed { color: var(--red); }
+    .event-kind.task_succeeded { color: var(--green); }
+
+    .preview-wrap { display: grid; grid-template-rows: 1fr; min-height: 0; }
+    .preview-wrap.has-artifacts { grid-template-rows: auto 1fr; }
+    .preview-header { display: none; justify-content: space-between; align-items: center; gap: 12px; min-height: 38px; padding: 5px 8px; border-bottom: 1px solid var(--line); background: #fff; overflow: hidden; }
+    .preview-wrap.has-artifacts .preview-header, .preview-wrap.graph-ready .preview-header { display: flex; }
+    .artifact-links { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; max-width: 48%; overflow-x: auto; overflow-y: hidden; }
+    .artifact-links:empty { display: none; }
+    .artifact-links a { flex: 0 0 auto; color: var(--accent-strong); border: 1px solid #b7c9dc; background: #f8fbff; text-decoration: none; border-radius: 999px; padding: 4px 8px; font-size: 11.5px; font-weight: 800; }
+
+    .graph-shell { display: grid; grid-template-columns: minmax(520px, 1fr) 320px; height: 100%; min-height: 0; }
+    .graph-shell.details-hidden { grid-template-columns: 1fr 0; }
+    #graph {
+      position: relative;
+      min-height: 520px;
+      height: 100%;
+      overflow: hidden;
+      background: white;
+      background-image: linear-gradient(#edf2f7 1px, transparent 1px), linear-gradient(90deg, #edf2f7 1px, transparent 1px);
+      background-size: 32px 32px;
+      user-select: none;
+      touch-action: none;
+    }
+    #graph.panning { cursor: grabbing; }
+    #graphCanvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    #edges { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: visible; }
+    .toolbar { position: absolute; z-index: 10; top: 10px; left: 10px; display: flex; flex-wrap: wrap; max-width: calc(100% - 20px); gap: 5px; }
+    .toolbar button, .toolbar label { margin: 0; border: 1px solid #bcc8d8; background: rgba(255,255,255,.94); border-radius: 6px; padding: 5px 8px; color: #203047; font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .toolbar label { display: inline-flex; align-items: center; gap: 5px; }
+    .toolbar input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+    .node {
+      position: absolute;
+      z-index: 2;
+      width: 230px;
+      min-height: 74px;
+      padding: 8px 10px;
+      border: 1px solid var(--op-line);
+      border-radius: 8px;
+      background: var(--op);
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      text-align: left;
+    }
+    .node:active { cursor: grabbing; }
+    .node.data { width: 240px; min-height: 82px; border-radius: 999px; background: var(--data); border-color: var(--data-line); display: flex; flex-direction: column; justify-content: center; text-align: center; }
+    .node.goal { width: 132px; min-height: 132px; border-radius: 999px; background: var(--goal); border-color: var(--goal-line); text-align: center; display: flex; flex-direction: column; justify-content: center; }
+    .node.final { width: 144px; min-height: 144px; border-radius: 999px; background: var(--final); border-color: var(--final-line); text-align: center; display: flex; flex-direction: column; justify-content: center; }
+    .node.unmatched { background: var(--unmatched); border-color: var(--unmatched-line); }
+    .node strong { display: block; margin-bottom: 4px; color: #0f2f55; font-size: 11.5px; line-height: 1.2; }
+    .node span { display: block; color: #44546a; font-size: 10.5px; line-height: 1.23; }
+    .details { padding: 12px; border-left: 1px solid var(--line); overflow: auto; background: #fff; }
+    .graph-shell.details-hidden .details { opacity: 0; pointer-events: none; overflow: hidden; padding: 0; border: 0; }
+    .details h2 { margin: 0 0 8px; font-size: 15px; }
+    .details h3 { margin: 0 0 8px; font-size: 14px; }
+    .details p, .details li { font-size: 12px; line-height: 1.4; }
+    .details pre { white-space: pre-wrap; word-break: break-word; background: #f1f4f8; padding: 10px; border-radius: 6px; font-size: 11.5px; line-height: 1.45; }
+    .details pre.code-snippet { background: #f5f7fb; color: #1f2937; border: 1px solid #d8e0ea; }
+    .py-keyword { color: #7c3aed; font-weight: 700; }
+    .py-string { color: #047857; }
+    .py-comment { color: #667085; font-style: italic; }
+    .py-number { color: #b45309; }
+    .py-builtin { color: #0f5fa8; }
+    .empty-preview { display: grid; place-items: center; height: 100%; min-height: 520px; color: var(--muted); text-align: center; padding: 28px; }
+    .empty-preview strong { color: #2a3545; display: block; margin-bottom: 6px; font-size: 15px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; color: #526174; font-size: 12px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .swatch { width: 16px; height: 16px; border-radius: 4px; display: inline-block; border: 1px solid #999; flex: 0 0 auto; }
+    .swatch.circle { border-radius: 999px; }
+    .swatch.ellipse { width: 24px; border-radius: 999px; }
+
+    @media (max-width: 1040px) {
+      main { grid-template-columns: 1fr; }
+      .controls { max-height: none; }
+      .workspace { min-height: 900px; }
+      .graph-shell { grid-template-columns: 1fr; }
+      .details { border-left: 0; border-top: 1px solid var(--line); max-height: 260px; }
+      .event { grid-template-columns: 72px 1fr; }
+      .event-message { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-copy">
+        <h1>GAS Geospatial Workflow Planning Agent</h1>
+        <p class="subtitle">
+          This Web App is built purely on the Geospatial Workflow Planning Agentic Service. Enter a spatial problem, GAS service URL(s), and your API key. This page streams the planning agent,
+          renders the workflow graph directly in the browser, and provides compact download links for returned artifacts.
+        </p>
+      </div>
+      <a class="github-link" href="https://github.com/GIBD2015/geospatial-agentic-services" target="_blank" rel="noopener noreferrer" aria-label="Open GAS project repository on GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.59 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.04 1.03-2.76-.1-.26-.45-1.31.1-2.72 0 0 .84-.28 2.75 1.05A9.33 9.33 0 0 1 12 6.98c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.46.1 2.72.64.72 1.03 1.64 1.03 2.76 0 3.94-2.34 4.8-4.57 5.06.36.32.68.95.68 1.92 0 1.38-.01 2.49-.01 2.83 0 .27.18.59.69.49A10.16 10.16 0 0 0 22 12.25C22 6.59 17.52 2 12 2z"/>
+        </svg>
+        GAS Project
+      </a>
+    </div>
+  </header>
+
+  <main id="appMain">
+    <section class="controls" aria-label="Workflow planning controls">
+      <button class="sidebar-toggle" id="toggleControls" type="button" title="Collapse request panel" aria-label="Collapse request panel">‹</button>
+      <div class="control-content">
+      <p class="section-title">Request</p>
+
+      <label for="instructions">User workflow goal</label>
+      <textarea id="instructions" spellcheck="true">For parcels in Centre County, Pennsylvania, calculate the distance (in kilometers) from each parcel to its nearest hospital, considering only hospitals located within the county boundary. Then, apply K-means clustering to group the parcels into five classes based on these distances. Finally, create a map displaying the parcels colored by cluster, along with hospital locations.</textarea>
+
+      <label for="serverUrl">GAS server hosting the planning agent</label>
+      <input id="serverUrl" type="url" value="https://www.geospatial-agentic-services.online" autocomplete="off">
+      <p class="hint">This server must expose <code>/agents/geospatial_workflow_planning_agent/tasks</code>.</p>
+
+      <label for="serviceUrls">GAS services to plan against</label>
+      <textarea id="serviceUrls" spellcheck="false">https://www.geospatial-agentic-services.online</textarea>
+      <p class="hint">Enter one GAS server base URL per line. The app automatically builds the GetCapabilities request for each service.</p>
+
+      <label for="apiKey">OpenAI API Key</label>
+      <input id="apiKey" type="password" placeholder="Paste a key for this request only" autocomplete="off">
+      <p class="hint">The key is sent only in the ExecuteTask request body and is not saved by this page.</p>
+
+      <div class="row">
+        <div>
+          <label for="planDetail">Planning Type</label>
+          <select id="planDetail">
+            <option value="conceptual">Conceptual</option>
+            <option value="executable" selected>Executable</option>
+          </select>
+        </div>
+        <div>
+          <label for="maxSteps">Maximum steps</label>
+          <input id="maxSteps" type="number" min="3" max="30" value="12">
+        </div>
+      </div>
+      <p class="hint">This app requests all planning artifacts as encoded outputs. The graph is rendered client-side from <code>workflow_json</code>.</p>
+
+      <div class="actions">
+        <button class="primary" id="submitBtn" type="button">Submit</button>
+        <button id="stopBtn" type="button" disabled>Stop stream</button>
+        <button id="clearBtn" type="button">Clear output</button>
+      </div>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Streaming output and workflow graph preview">
+      <div class="preview-wrap">
+        <div class="preview-header">
+          <div class="legend" aria-label="Workflow graph legend">
+            <span><span class="swatch circle" style="background:#bfdcff;border-color:#2563a8"></span>Goal</span>
+            <span><span class="swatch" style="background:#eaf3ff;border-color:#6b93c6"></span>Agent</span>
+            <span id="missingAgentLegend" hidden><span class="swatch" style="background:#ffe8e8;border-color:#d65a5a"></span>Missing agent</span>
+            <span><span class="swatch ellipse" style="background:#fff8d8;border-color:#d4a72c"></span>Data</span>
+            <span><span class="swatch circle" style="background:#dff4d8;border-color:#4b9b46"></span>Final output</span>
+          </div>
+          <div class="artifact-links" id="artifactLinks"></div>
+        </div>
+        <div id="graphShell" class="graph-shell">
+          <div id="graph">
+            <div class="toolbar">
+              <button type="button" id="zoomIn">Zoom in</button>
+              <button type="button" id="zoomOut">Zoom out</button>
+              <button type="button" id="zoomFit">Fit</button>
+              <button type="button" id="savePng">Save PNG</button>
+              <label><input type="checkbox" id="curveEdges" checked> Curved edges</label>
+              <label><input type="checkbox" id="gravityForce" checked> Gravity force</label>
+              <button type="button" id="toggleDetails">Hide details</button>
+            </div>
+            <div id="emptyPreview" class="empty-preview">
+              <div>
+                <strong>No workflow graph yet</strong>
+                Submit a planning request to stream progress and draw the workflow from JSON.
+              </div>
+            </div>
+            <div id="graphCanvas" hidden>
+              <svg id="edges"></svg>
+            </div>
+          </div>
+          <aside class="details">
+            <h2 id="detailsTitle">Workflow Details</h2>
+            <div id="details">Select or drag a node. Operation nodes are GAS agent calls; data nodes are inputs and outputs passed between agents.</div>
+          </aside>
+        </div>
+      </div>
+
+      <div class="stream-panel" id="streamPanel">
+        <div class="status-bar">
+          <span class="status-pill"><span class="dot" id="statusDot"></span><span id="statusText">Idle</span></span>
+          <span class="summary" id="resultSummary"></span>
+          <span class="hint" id="taskIdText">Task ID: -</span>
+          <button id="toggleStreamBtn" type="button">Hide stream</button>
+        </div>
+        <div class="event-log" id="eventLog" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const planningAgentId = "geospatial_workflow_planning_agent";
+    const appMain = document.getElementById("appMain");
+    const serverUrlInput = document.getElementById("serverUrl");
+    const serviceUrlsInput = document.getElementById("serviceUrls");
+    const instructionsInput = document.getElementById("instructions");
+    const apiKeyInput = document.getElementById("apiKey");
+    const planDetailInput = document.getElementById("planDetail");
+    const maxStepsInput = document.getElementById("maxSteps");
+    const submitBtn = document.getElementById("submitBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const streamPanel = document.getElementById("streamPanel");
+    const toggleStreamBtn = document.getElementById("toggleStreamBtn");
+    const eventLog = document.getElementById("eventLog");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const taskIdText = document.getElementById("taskIdText");
+    const resultSummary = document.getElementById("resultSummary");
+    const artifactLinks = document.getElementById("artifactLinks");
+    const missingAgentLegend = document.getElementById("missingAgentLegend");
+    const previewWrap = document.querySelector(".preview-wrap");
+    const emptyPreview = document.getElementById("emptyPreview");
+    const graphShell = document.getElementById("graphShell");
+    const graph = document.getElementById("graph");
+    const graphCanvas = document.getElementById("graphCanvas");
+    const svg = document.getElementById("edges");
+    const details = document.getElementById("details");
+    const detailsTitle = document.getElementById("detailsTitle");
+    const curveEdgesInput = document.getElementById("curveEdges");
+    const gravityForceInput = document.getElementById("gravityForce");
+
+    const nodeWidth = 230;
+    const nodeHeight = 74;
+    let activeController = null;
+    let currentPlan = null;
+    let currentGraph = { nodes: [], edges: [], positions: new Map(), elements: new Map(), width: 1200, height: 680 };
+    let draggedNodeId = null;
+    let panStart = null;
+    let zoom = 1;
+    let panX = 0;
+    let panY = 0;
+
+    function normalizeBaseUrl(value) {
+      return String(value || "").trim().replace(/\/+$/, "");
+    }
+
+    function splitServiceUrls(value) {
+      return String(value || "").split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+    }
+
+    function capabilitiesUrlFromServiceBase(value) {
+      const baseUrl = normalizeBaseUrl(value);
+      if (!baseUrl) return "";
+      return `${baseUrl}/?SERVICE=GAS&VERSION=1.0.0&REQUEST=GetCapabilities`;
+    }
+
+    function setStatus(label, state) {
+      statusText.textContent = label;
+      statusDot.className = `dot ${state || ""}`.trim();
+    }
+
+    function eventTime(event) {
+      const raw = event && event.timestamp;
+      if (!raw) return new Date().toLocaleTimeString();
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? String(raw).slice(11, 19) || "--:--:--" : parsed.toLocaleTimeString();
+    }
+
+    function eventMessage(event) {
+      if (!event || typeof event !== "object") return "";
+      if (event.message) return String(event.message);
+      if (event.status) return String(event.status);
+      const payload = event.payload;
+      if (payload && payload.error && payload.error.message) return payload.error.message;
+      return "";
+    }
+
+    function appendEvent(event) {
+      const kind = event && event.event ? String(event.event) : "message";
+      const row = document.createElement("div");
+      row.className = "event";
+      const time = document.createElement("div");
+      time.className = "event-time";
+      time.textContent = eventTime(event);
+      const kindEl = document.createElement("div");
+      kindEl.className = `event-kind ${kind}`;
+      kindEl.textContent = kind + ":";
+      const message = document.createElement("div");
+      message.className = "event-message";
+      message.textContent = eventMessage(event);
+      row.append(time, kindEl, message);
+      eventLog.append(row);
+      eventLog.scrollTop = eventLog.scrollHeight;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function highlightPython(code) {
+      const placeholders = [];
+      let htmlText = escapeHtml(code);
+      htmlText = htmlText.replace(/(&quot;{3}[\s\S]*?&quot;{3}|&#039;{3}[\s\S]*?&#039;{3}|&quot;(?:\\.|[^&])*?&quot;|&#039;(?:\\.|[^&])*?&#039;)/g, (match) => {
+        const token = `@@PYTOKEN${placeholders.length}@@`;
+        placeholders.push(`<span class="py-string">${match}</span>`);
+        return token;
+      });
+      htmlText = htmlText.replace(/(#.*)$/gm, (match) => {
+        const token = `@@PYTOKEN${placeholders.length}@@`;
+        placeholders.push(`<span class="py-comment">${match}</span>`);
+        return token;
+      });
+      htmlText = htmlText
+        .replace(/\b(def|class|return|if|elif|else|for|while|try|except|finally|with|as|from|import|in|is|not|and|or|None|True|False|raise|yield|lambda)\b/g, '<span class="py-keyword">$1</span>')
+        .replace(/\b(print|len|range|str|int|float|dict|list|set|tuple|next|enumerate|zip|open|isinstance)\b/g, '<span class="py-builtin">$1</span>')
+        .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="py-number">$1</span>');
+      placeholders.forEach((value, index) => {
+        htmlText = htmlText.replaceAll(`@@PYTOKEN${index}@@`, value);
+      });
+      return htmlText;
+    }
+
+    function clearOutput() {
+      eventLog.innerHTML = "";
+      artifactLinks.innerHTML = "";
+      previewWrap.classList.remove("has-artifacts");
+      previewWrap.classList.remove("graph-ready");
+      taskIdText.textContent = "Task ID: -";
+      resultSummary.innerHTML = "";
+      emptyPreview.hidden = false;
+      graphCanvas.hidden = true;
+      graphCanvas.innerHTML = '<svg id="edges"></svg>';
+      currentPlan = null;
+      currentGraph = { nodes: [], edges: [], positions: new Map(), elements: new Map(), width: 1200, height: 680 };
+      setStatus("Idle", "");
+      detailsTitle.textContent = "Workflow Details";
+      details.textContent = "Select or drag a node. Operation nodes are GAS agent calls; data nodes are inputs and outputs passed between agents.";
+    }
+
+    function buildRequestBody() {
+      const instructions = instructionsInput.value.trim();
+      const gasServers = splitServiceUrls(serviceUrlsInput.value).map(capabilitiesUrlFromServiceBase).filter(Boolean);
+      const maxSteps = Number(maxStepsInput.value || 12);
+      const credentials = {};
+      const apiKey = apiKeyInput.value.trim();
+
+      if (!instructions) throw new Error("Please enter a workflow goal.");
+      if (!gasServers.length) throw new Error("Please enter at least one GAS service base URL.");
+      if (apiKey) credentials.OPENAI_API_KEY = apiKey;
+
+      const parameters = {
+        gas_servers: gasServers,
+        plan_outputs: [
+          "interactive_workflow_graph",
+          "workflow_json",
+          "human_readable",
+          "gas_client_python",
+          "notebook_skeleton",
+        ],
+        plan_detail: planDetailInput.value,
+        include_validation_steps: true,
+        max_steps: maxSteps,
+      };
+
+      const body = {
+        task: { instructions, mode: "stream" },
+        outputs: { artifact_delivery: "Encoded" },
+        parameters,
+      };
+      if (Object.keys(credentials).length) body.credentials = credentials;
+      return body;
+    }
+
+    function artifactLabel(artifact, index) {
+      const name = artifact.name || artifact.filename || artifact.url || `artifact_${index + 1}`;
+      return artifact.format ? `${name} (${artifact.format})` : name;
+    }
+
+    function findJsonArtifact(artifacts) {
+      return artifacts.find((artifact) => {
+        const url = String(artifact.url || "").toLowerCase();
+        const format = String(artifact.format || "").toLowerCase();
+        const name = String(artifact.name || artifact.filename || "").toLowerCase();
+        return format === "json" || url.endsWith(".json") || name.endsWith(".json");
+      });
+    }
+
+    function artifactObjectUrl(artifact, mimeType, allArtifacts = []) {
+      if (!artifact) return "";
+      if (artifact.url) return artifact.url;
+      const text = artifactText(artifact);
+      if (!text) return "";
+      if (isHtmlArtifact(artifact)) {
+        return htmlArtifactObjectUrl(artifact, allArtifacts);
+      }
+      const blob = new Blob([text], { type: mimeType || "text/plain" });
+      return URL.createObjectURL(blob);
+    }
+
+    function artifactText(artifact) {
+      if (!artifact || !artifact.data) return "";
+      return artifact.encoding === "base64" ? decodeBase64Utf8(artifact.data) : String(artifact.data);
+    }
+
+    function artifactFilename(artifact, fallback = "artifact") {
+      return String(artifact?.name || artifact?.filename || fallback);
+    }
+
+    function artifactFormat(artifact) {
+      return String(artifact?.format || "").toLowerCase();
+    }
+
+    function isHtmlArtifact(artifact) {
+      const name = artifactFilename(artifact, "").toLowerCase();
+      const format = artifactFormat(artifact);
+      return format === "html" || format === "htm" || name.endsWith(".html") || name.endsWith(".htm");
+    }
+
+    function artifactMimeType(artifact) {
+      const format = artifactFormat(artifact);
+      if (format === "json") return "application/json";
+      if (format === "md" || format === "markdown") return "text/markdown";
+      if (format === "py") return "text/x-python";
+      if (format === "ipynb") return "application/x-ipynb+json";
+      if (format === "html" || format === "htm") return "text/html";
+      return "text/plain";
+    }
+
+    function artifactDataUrl(artifact) {
+      if (!artifact || !artifact.data) return "";
+      const mimeType = artifactMimeType(artifact);
+      const data = artifact.encoding === "base64" ? artifact.data : encodeBase64Utf8(String(artifact.data));
+      return `data:${mimeType};charset=utf-8;base64,${data}`;
+    }
+
+    function encodeBase64Utf8(value) {
+      const bytes = new TextEncoder().encode(value);
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function htmlArtifactObjectUrl(htmlArtifact, allArtifacts) {
+      const text = artifactText(htmlArtifact);
+      if (!text) return "";
+      const companionArtifacts = allArtifacts.filter((artifact) => artifact && artifact !== htmlArtifact && artifact.data);
+      if (!companionArtifacts.length) {
+        return URL.createObjectURL(new Blob([text], { type: "text/html" }));
+      }
+
+      let patched = text;
+      try {
+        const documentCopy = new DOMParser().parseFromString(text, "text/html");
+        documentCopy.querySelectorAll("a[href]").forEach((link) => {
+          const href = link.getAttribute("href") || "";
+          const match = companionArtifacts.find((artifact) => {
+            const filename = artifactFilename(artifact, "");
+            return href === filename || decodeURIComponent(href) === filename || href.endsWith("/" + filename);
+          });
+          if (!match) return;
+          link.setAttribute("href", artifactDataUrl(match));
+          link.setAttribute("download", artifactFilename(match));
+          link.setAttribute("target", "_blank");
+          link.setAttribute("rel", "noopener");
+        });
+        patched = "<!doctype html>\n" + documentCopy.documentElement.outerHTML;
+      } catch (_) {
+        companionArtifacts.forEach((artifact) => {
+          const filename = artifactFilename(artifact, "");
+          if (!filename) return;
+          const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          patched = patched.replace(
+            new RegExp(`href=(["'])${escaped}\\1`, "g"),
+            `href="${artifactDataUrl(artifact)}" download="${filename}"`
+          );
+        });
+      }
+      return URL.createObjectURL(new Blob([patched], { type: "text/html" }));
+    }
+
+    async function loadWorkflowJsonArtifact(artifact) {
+      if (!artifact) throw new Error("The task did not return a workflow JSON artifact.");
+      if (artifact.data) {
+        const text = artifact.encoding === "base64" ? decodeBase64Utf8(artifact.data) : artifact.data;
+        return JSON.parse(text);
+      }
+      if (!artifact.url) throw new Error("The workflow JSON artifact does not include a URL or embedded data.");
+      const response = await fetch(artifact.url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Could not fetch workflow JSON artifact: HTTP ${response.status}`);
+      return response.json();
+    }
+
+    function decodeBase64Utf8(value) {
+      const binary = atob(value);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+
+    async function showTaskResult(taskResult) {
+      const task = taskResult && taskResult.task ? taskResult.task : {};
+      const outputs = taskResult && taskResult.outputs ? taskResult.outputs : {};
+      const artifacts = Array.isArray(outputs.artifacts) ? outputs.artifacts : [];
+      const diagnostics = taskResult && taskResult.diagnostics ? taskResult.diagnostics : {};
+      const jsonArtifact = findJsonArtifact(artifacts);
+
+      taskIdText.textContent = `Task ID: ${task.id || "-"}`;
+      const responseJsonUrl = URL.createObjectURL(new Blob([JSON.stringify(taskResult, null, 2)], { type: "application/json" }));
+      resultSummary.innerHTML = `
+        <strong>Result:</strong> ${escapeHtml(task.status || "unknown")}
+        <a href="${responseJsonUrl}" target="_blank" rel="noopener noreferrer" download="gas_planning_agent_response.json" style="margin-left:8px;">Response JSON</a>
+        <br><strong>Summary:</strong> ${escapeHtml(outputs.summary || "-")}
+        ${diagnostics.error ? `<br><strong>Error:</strong> ${escapeHtml(diagnostics.error)}` : ""}
+      `;
+
+      artifactLinks.innerHTML = "";
+      artifacts.forEach((artifact, index) => {
+        if (!artifact) return;
+        const link = document.createElement("a");
+        link.href = artifactObjectUrl(artifact, "text/plain", artifacts) || "#";
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.download = artifact.name || artifact.filename || "";
+        link.textContent = downloadLabel(artifact, index);
+        artifactLinks.append(link);
+      });
+      previewWrap.classList.toggle("has-artifacts", artifacts.length > 0);
+
+      try {
+        currentPlan = await loadWorkflowJsonArtifact(jsonArtifact);
+        renderWorkflowPlan(currentPlan);
+        if (isFallbackPlan(currentPlan)) {
+          appendEvent({
+            event: "warning",
+            message: "The returned workflow appears to be a fallback plan. Check the task diagnostics and API key/model settings if the workflow is too generic.",
+          });
+        }
+      } catch (error) {
+        emptyPreview.hidden = false;
+        graphCanvas.hidden = true;
+        appendEvent({ event: "error", message: error.message || String(error) });
+      }
+    }
+
+    function downloadLabel(artifact, index) {
+      const format = String(artifact.format || "").toLowerCase();
+      if (format === "json") return "Download JSON";
+      if (format === "md" || format === "markdown") return "Download Markdown";
+      if (format === "py") return "Download Python";
+      if (format === "ipynb") return "Download Notebook";
+      if (format === "html" || format === "htm") return "Download HTML";
+      return `Download artifact ${index + 1}`;
+    }
+
+    function compactLabel(value, fallback) {
+      const text = humanReadableDataLabel(objectLabel(value, fallback), fallback).replace(/\s+/g, " ").trim();
+      return text.length > 74 ? text.slice(0, 71) + "..." : text;
+    }
+
+    function humanReadableDataLabel(value, fallback = "-") {
+      let text = String(value || fallback).trim();
+      if (!text) return fallback;
+      const looksCodeStyle = /[_-]/.test(text) && !/\s/.test(text);
+      if (looksCodeStyle) {
+        const replacements = {
+          gpkg: "GeoPackage",
+          geopackage: "GeoPackage",
+          geojson: "GeoJSON",
+          geotiff: "GeoTIFF",
+          tif: "GeoTIFF",
+          tiff: "GeoTIFF",
+          png: "PNG",
+          jpg: "JPEG",
+          jpeg: "JPEG",
+          csv: "CSV",
+          json: "JSON",
+          html: "HTML",
+          dem: "DEM",
+          crs: "CRS",
+          fips: "FIPS",
+          url: "URL",
+        };
+        text = text
+          .replace(/-/g, "_")
+          .split("_")
+          .filter(Boolean)
+          .map((part) => replacements[part.toLowerCase()] || part.charAt(0).toUpperCase() + part.slice(1))
+          .map((word, index) => index > 0 && ["a", "an", "and", "as", "at", "by", "for", "from", "in", "of", "on", "to", "with"].includes(word.toLowerCase()) ? word.toLowerCase() : word)
+          .join(" ");
+      }
+      return text.replace(/\bartifact_url\b/gi, "artifact URL").replace(/\s+/g, " ").trim();
+    }
+
+    function objectLabel(value, fallback = "-") {
+      if (value === null || value === undefined || value === "") return fallback;
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+      if (Array.isArray(value)) return value.map((item) => objectLabel(item, "")).filter(Boolean).join(", ") || fallback;
+      if (typeof value === "object") {
+        return (
+          value.name ||
+          value.filename ||
+          value.title ||
+          value.label ||
+          value.objective ||
+          value.data_objective ||
+          value.output ||
+          value.artifact ||
+          value.dataset ||
+          value.description ||
+          value.format ||
+          value.type ||
+          JSON.stringify(value)
+        );
+      }
+      return String(value);
+    }
+
+    function listLabels(value, fallback = "-") {
+      if (!Array.isArray(value) || !value.length) return fallback;
+      return value.map((item) => objectLabel(item, "")).filter(Boolean).join(", ") || fallback;
+    }
+
+    function detectDataFormat(value) {
+      const text = humanReadableDataLabel(objectLabel(value, ""), "").toLowerCase();
+      const formats = [
+        ["GeoPackage", /\b(geopackage|gpkg)\b/i],
+        ["GeoJSON", /\bgeojson\b/i],
+        ["GeoTIFF", /\b(geotiff|geo tiff|tiff|tif)\b/i],
+        ["Shapefile", /\bshapefile\b/i],
+        ["CSV", /\bcsv\b/i],
+        ["PNG", /\bpng\b/i],
+        ["JPEG", /\b(jpeg|jpg)\b/i],
+        ["HTML", /\bhtml\b/i],
+        ["JSON", /\bjson\b/i],
+      ];
+      const match = formats.find(([, pattern]) => pattern.test(text));
+      return match ? match[0] : "";
+    }
+
+    function stripDataFormat(value) {
+      let text = humanReadableDataLabel(objectLabel(value, ""), "");
+      if (!text) return "";
+      text = text
+        .replace(/\s*\((?:GeoPackage|GPKG|GeoJSON|GeoTIFF|Geo TIFF|TIFF|TIF|Shapefile|CSV|PNG|JPEG|JPG|HTML|JSON)\)\s*$/i, "")
+        .replace(/\b(?:GeoPackage|GPKG|GeoJSON|GeoTIFF|Geo TIFF|TIFF|TIF|Shapefile|CSV|PNG|JPEG|JPG|HTML|JSON)\b\s*$/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      return text || humanReadableDataLabel(value, "Data artifact");
+    }
+
+    function variableNameForStep(stepId) {
+      return `${safeId(stepId || "step")}_result`;
+    }
+
+    function artifactVariableNameForDataNode(node) {
+      return node.variableName || `${safeId(node.id || "artifact")}_url`;
+    }
+
+    function quotePython(value) {
+      return JSON.stringify(String(value || ""));
+    }
+
+    function buildOperationCode(node, step) {
+      const stepId = safeId(step.step_id || node.id || "step");
+      const resultVar = variableNameForStep(stepId);
+      const inputNodes = currentGraph.edges
+        .filter((edge) => edge.target === node.id)
+        .map((edge) => currentGraph.nodes.find((candidate) => candidate.id === edge.source))
+        .filter((candidate) => candidate && candidate.nodeType === "data" && candidate.role !== "goal");
+      const inputVars = inputNodes.map(artifactVariableNameForDataNode);
+      const inputLine = inputVars.length ? `[${inputVars.join(", ")}]` : "None";
+      const instructions = step.instructions || step.purpose || step.title || "";
+      const mode = step.recommended_mode || "stream";
+      if (!step.agent_id || step.match_status === "unmatched") {
+        return [
+          `# ${objectLabel(step.title || node.label)}`,
+          `# No matching GAS agent was found for this step.`,
+          `# Required capability: ${step.required_capability || step.title || "unspecified"}`,
+          `# Recommended action: ${step.recommended_action || "Discover or implement a GAS agent for this capability."}`,
+        ].join("\n");
+      }
+      return [
+        `# ${objectLabel(step.title || node.label)}`,
+        `${resultVar} = client.execute_task(`,
+        `    ${quotePython(step.agent_id || "")},`,
+        `    ${quotePython(instructions)},`,
+        `    mode=${quotePython(mode)},`,
+        `    input_datasets=${inputLine},`,
+        `)`,
+        `client.print_task_summary(${resultVar})`,
+        `${stepId}_artifact_urls = [`,
+        `    artifact.get("url")`,
+        `    for artifact in ${resultVar}.get("outputs", {}).get("artifacts", [])`,
+        `    if artifact.get("url")`,
+        `]`,
+      ].join("\n");
+    }
+
+    function buildDataNodeCode(node) {
+      if (node.role === "goal") return `workflow_goal = ${quotePython(currentPlan?.user_goal || "")}`;
+      const source = currentGraph.nodes.find((candidate) => candidate.id === node.producedBy);
+      const stepId = source && source.step ? safeId(source.step.step_id) : "previous_step";
+      const resultVar = variableNameForStep(stepId);
+      const variableName = artifactVariableNameForDataNode(node);
+      return [
+        `${variableName} = next(`,
+        `    (artifact.get("url") for artifact in ${resultVar}.get("outputs", {}).get("artifacts", []) if artifact.get("url")),`,
+        `    None,`,
+        `)`,
+        `if not ${variableName}:`,
+        `    raise RuntimeError(${quotePython("Expected artifact URL was not returned for " + objectLabel(node.label))})`,
+      ].join("\n");
+    }
+
+    function isFallbackPlan(plan) {
+      const steps = Array.isArray(plan && plan.workflow_steps) ? plan.workflow_steps : [];
+      const haystack = [
+        plan && plan.summary,
+        ...steps.map((step) => step.purpose),
+        ...steps.map((step) => step.notes).flat(),
+      ].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes("fallback planning") || haystack.includes("fallback plan");
+    }
+
+    function safeId(value) {
+      return String(value || "node").replace(/[^a-zA-Z0-9_:-]+/g, "_");
+    }
+
+    function buildGraphFromPlan(plan) {
+      const steps = Array.isArray(plan.workflow_steps) ? [...plan.workflow_steps].sort((a, b) => (a.order || 0) - (b.order || 0)) : [];
+      const nodes = [];
+      const edges = [];
+      const outputNodesByStep = new Map();
+      const operationNodeByStep = new Map();
+
+      nodes.push({
+        id: "data:user_goal",
+        nodeType: "data",
+        role: "goal",
+        label: "User workflow goal",
+        description: compactLabel(plan.user_goal, "User workflow goal"),
+        layer: 0,
+        details: { "Planning Type": plan.planning_detail_type || plan.plan_detail || "-", Readiness: plan.readiness || "-" },
+      });
+
+      steps.forEach((step, index) => {
+        const stepId = safeId(step.step_id || `step_${index + 1}`);
+        const opId = `operation:${stepId}`;
+        const dependencies = Array.isArray(step.input_from_steps) && step.input_from_steps.length ? step.input_from_steps : (Array.isArray(step.depends_on) ? step.depends_on : []);
+        operationNodeByStep.set(stepId, opId);
+        nodes.push({
+          id: opId,
+          nodeType: "operation",
+          role: step.match_status === "unmatched" || !step.agent_id ? "unmatched" : "matched",
+          label: `${step.order || index + 1}. ${step.agent_name || step.agent_id || "GAS Agent"}`,
+          description: compactLabel(step.purpose || step.title, "GAS operation"),
+          layer: Math.max(1, (step.order || index + 1) * 2 - 1),
+          step,
+        });
+
+        if (dependencies.length) {
+          dependencies.forEach((dependency) => {
+            const depStepId = safeId(dependency);
+            const depOutputs = outputNodesByStep.get(depStepId) || [];
+            if (depOutputs.length) {
+              depOutputs.forEach((depOutput) => edges.push({ source: depOutput, target: opId, role: "dependency" }));
+            } else if (operationNodeByStep.has(depStepId)) {
+              edges.push({ source: operationNodeByStep.get(depStepId), target: opId, role: "dependency" });
+            }
+          });
+        } else {
+          edges.push({ source: "data:user_goal", target: opId, role: "goal" });
+        }
+
+        const outputs = Array.isArray(step.expected_outputs) && step.expected_outputs.length ? step.expected_outputs : ["Standard GAS task response artifact"];
+        const hasDownstreamDependency = steps.some((candidate) => {
+          const downstream = Array.isArray(candidate.input_from_steps) && candidate.input_from_steps.length ? candidate.input_from_steps : (Array.isArray(candidate.depends_on) ? candidate.depends_on : []);
+          return downstream.map(safeId).includes(stepId);
+        });
+        outputs.forEach((output, outputIndex) => {
+          const isFinal = !hasDownstreamDependency;
+          const dataId = `data:${stepId}:output_${outputIndex + 1}`;
+          const dataTitle = compactLabel(stripDataFormat(output), `Output ${outputIndex + 1}`);
+          const dataFormat = detectDataFormat(output);
+          nodes.push({
+            id: dataId,
+            nodeType: "data",
+            role: isFinal ? "final" : "artifact",
+            label: dataTitle,
+            description: dataFormat,
+            layer: Math.max(2, (step.order || index + 1) * 2),
+            variableName: outputIndex === 0 ? `${stepId}_artifact_url` : `${stepId}_artifact_${outputIndex + 1}_url`,
+            producedBy: opId,
+            sourceStepId: stepId,
+          });
+          edges.push({ source: opId, target: dataId, role: "output" });
+          if (!outputNodesByStep.has(stepId)) outputNodesByStep.set(stepId, []);
+          outputNodesByStep.get(stepId).push(dataId);
+        });
+      });
+
+      return { nodes, edges };
+    }
+
+    function layoutGraph(nodes, edges) {
+      const maxLayer = Math.max(1, ...nodes.map((node) => node.layer || 0));
+      const width = Math.max(980, (maxLayer + 1) * 168 + 130);
+      const height = Math.max(1120, Math.min(1900, 900 + nodes.length * 44));
+      const centerY = height / 2;
+      const rootOffsets = [-280, 280, 0, -470, 470, -650, 650, -120, 120];
+      const outputOffsets = [150, -150, 315, -315, 470, -470, 620, -620];
+      const positions = new Map();
+      const operationNodes = nodes
+        .filter((node) => node.nodeType === "operation")
+        .sort((a, b) => Number(a.step?.order || 0) - Number(b.step?.order || 0));
+      const outputNodesByStep = new Map();
+      nodes.filter((node) => node.nodeType === "data" && node.sourceStepId).forEach((node) => {
+        if (!outputNodesByStep.has(node.sourceStepId)) outputNodesByStep.set(node.sourceStepId, []);
+        outputNodesByStep.get(node.sourceStepId).push(node);
+      });
+      const stepY = new Map();
+
+      nodes.forEach((node) => {
+        if (node.role === "goal") {
+          positions.set(node.id, { x: 44, y: centerY - 66 });
+        }
+      });
+
+      operationNodes.forEach((node, index) => {
+        const order = Number(node.step?.order || index + 1);
+        const dependencies = Array.isArray(node.step?.input_from_steps) && node.step.input_from_steps.length ? node.step.input_from_steps : (Array.isArray(node.step?.depends_on) ? node.step.depends_on : []);
+        let y;
+        if (dependencies.length) {
+          const parentYs = dependencies
+            .map((dependency) => stepY.get(safeId(dependency)))
+            .filter((value) => Number.isFinite(value));
+          if (parentYs.length) {
+            const average = parentYs.reduce((sum, value) => sum + value, 0) / parentYs.length;
+            const laneTarget = centerY + rootOffsets[(order - 1) % rootOffsets.length];
+            const branchNudge = (order % 2 === 0 ? 1 : -1) * 110;
+            y = average * 0.25 + laneTarget * 0.75 + branchNudge;
+          }
+        }
+        if (!Number.isFinite(y)) {
+          y = centerY + rootOffsets[index % rootOffsets.length];
+        }
+        y = Math.max(92, Math.min(height - 170, y));
+        stepY.set(safeId(node.step?.step_id || `step_${order}`), y);
+        positions.set(node.id, { x: 58 + (node.layer || 1) * 168, y });
+      });
+
+      outputNodesByStep.forEach((items, stepId) => {
+        const producer = nodes.find((candidate) => candidate.id === items[0]?.producedBy);
+        const base = positions.get(producer?.id);
+        const baseY = stepY.get(stepId) || centerY;
+        items.forEach((node, outputIndex) => {
+          const y = baseY + outputOffsets[outputIndex % outputOffsets.length];
+          positions.set(node.id, {
+            x: 58 + (node.layer || 2) * 168,
+            y: Math.max(92, Math.min(height - 170, y)),
+          });
+        });
+      });
+
+      separateOverlaps(nodes, positions, height);
+      shiftGraphToTop(nodes, positions);
+      return { width, height, positions };
+    }
+
+    function shiftGraphToTop(nodes, positions) {
+      const top = Math.min(...nodes.map((node) => positions.get(node.id)?.y ?? 0));
+      const shift = Math.max(0, top - 92);
+      if (!Number.isFinite(shift) || shift <= 0) return;
+      nodes.forEach((node) => {
+        const pos = positions.get(node.id);
+        if (pos) pos.y = Math.max(60, pos.y - shift);
+      });
+    }
+
+    function separateOverlaps(nodes, positions, height) {
+      const byLayer = new Map();
+      nodes.forEach((node) => {
+        const layer = node.layer || 0;
+        if (!byLayer.has(layer)) byLayer.set(layer, []);
+        byLayer.get(layer).push(node);
+      });
+      byLayer.forEach((items) => {
+        items.sort((a, b) => (positions.get(a.id)?.y || 0) - (positions.get(b.id)?.y || 0));
+        let previousBottom = 60;
+        items.forEach((node) => {
+          const pos = positions.get(node.id);
+          const gap = node.nodeType === "data" ? 112 : 96;
+          if (pos.y < previousBottom) pos.y = previousBottom;
+          previousBottom = pos.y + gap;
+        });
+        const overflow = previousBottom - height + 70;
+        if (overflow > 0) {
+          items.forEach((node) => {
+            const pos = positions.get(node.id);
+            pos.y = Math.max(70, pos.y - overflow / 2);
+          });
+        }
+      });
+    }
+
+    function renderWorkflowPlan(plan) {
+      const graphData = buildGraphFromPlan(plan);
+      const layout = layoutGraph(graphData.nodes, graphData.edges);
+      currentGraph = { ...graphData, ...layout, elements: new Map() };
+      emptyPreview.hidden = true;
+      graphCanvas.hidden = false;
+      previewWrap.classList.add("graph-ready");
+      graphCanvas.innerHTML = '<svg id="edges"></svg>';
+      const newSvg = document.getElementById("edges");
+      newSvg.setAttribute("width", layout.width);
+      newSvg.setAttribute("height", layout.height);
+      newSvg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
+      graphCanvas.style.width = `${layout.width}px`;
+      graphCanvas.style.height = `${layout.height}px`;
+
+      graphData.nodes.forEach((node) => {
+        const el = document.createElement("div");
+        el.className = `node ${node.nodeType === "data" ? "data" : "operation"} ${node.role || ""}`.trim();
+        el.dataset.nodeId = node.id;
+        el.innerHTML = `<strong>${escapeHtml(node.label)}</strong><span>${escapeHtml(node.description || "")}</span>`;
+        graphCanvas.append(el);
+        currentGraph.elements.set(node.id, el);
+        placeNode(node.id);
+        el.addEventListener("pointerdown", startNodeDrag);
+        el.addEventListener("click", () => showDetails(node));
+      });
+
+      missingAgentLegend.hidden = !graphData.nodes.some((node) => node.role === "unmatched");
+      fitToView();
+      renderEdges();
+      const first = graphData.nodes.find((node) => node.nodeType === "operation") || graphData.nodes[0];
+      if (first) showDetails(first);
+    }
+
+    function nodeSize(nodeId) {
+      const el = currentGraph.elements.get(nodeId);
+      if (!el) return { width: nodeWidth, height: nodeHeight };
+      return { width: el.offsetWidth || nodeWidth, height: el.offsetHeight || nodeHeight };
+    }
+
+    function nodeCenter(nodeId) {
+      const pos = currentGraph.positions.get(nodeId) || { x: 0, y: 0 };
+      const size = nodeSize(nodeId);
+      return { x: pos.x + size.width / 2, y: pos.y + size.height / 2 };
+    }
+
+    function boundaryPoint(nodeId, toward) {
+      const pos = currentGraph.positions.get(nodeId) || { x: 0, y: 0 };
+      const size = nodeSize(nodeId);
+      const center = { x: pos.x + size.width / 2, y: pos.y + size.height / 2 };
+      const dx = toward.x - center.x;
+      const dy = toward.y - center.y;
+      const scale = Math.min(Math.abs((size.width / 2) / (dx || 0.001)), Math.abs((size.height / 2) / (dy || 0.001)));
+      return { x: center.x + dx * scale * .98, y: center.y + dy * scale * .98 };
+    }
+
+    function renderEdges() {
+      const edgeSvg = document.getElementById("edges");
+      edgeSvg.innerHTML = `
+        <defs>
+          <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="${getComputedStyle(document.documentElement).getPropertyValue("--edge").trim() || "#52667f"}"></path>
+          </marker>
+        </defs>
+      `;
+      currentGraph.edges.forEach((edge) => {
+        const sourceCenter = nodeCenter(edge.source);
+        const targetCenter = nodeCenter(edge.target);
+        const start = boundaryPoint(edge.source, targetCenter);
+        const end = boundaryPoint(edge.target, sourceCenter);
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const distance = Math.hypot(end.x - start.x, end.y - start.y);
+        if (curveEdgesInput.checked && distance > 80) {
+          const curve = curvedEdgeControls(start, end);
+          path.setAttribute("d", `M ${start.x} ${start.y} C ${curve.c1.x} ${curve.c1.y}, ${curve.c2.x} ${curve.c2.y}, ${end.x} ${end.y}`);
+        } else {
+          path.setAttribute("d", `M ${start.x} ${start.y} L ${end.x} ${end.y}`);
+        }
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "var(--edge)");
+        path.setAttribute("stroke-width", "2.1");
+        path.setAttribute("marker-end", "url(#arrow)");
+        edgeSvg.append(path);
+      });
+    }
+
+    function curvedEdgeControls(start, end) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const ux = dx / distance;
+      const uy = dy / distance;
+      const px = -uy;
+      const py = ux;
+      const curve = Math.max(48, Math.min(160, distance * .32));
+      const bend = Math.max(-90, Math.min(90, dy * .18));
+      return {
+        c1: { x: start.x + ux * curve + px * bend, y: start.y + uy * curve + py * bend },
+        c2: { x: end.x - ux * curve + px * bend, y: end.y - uy * curve + py * bend },
+      };
+    }
+
+    function placeNode(nodeId) {
+      const el = currentGraph.elements.get(nodeId);
+      const pos = currentGraph.positions.get(nodeId);
+      if (!el || !pos) return;
+      el.style.left = `${pos.x}px`;
+      el.style.top = `${pos.y}px`;
+    }
+
+    function updateTransform() {
+      graphCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    }
+
+    function screenToWorld(clientX, clientY) {
+      const rect = graph.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left - panX) / zoom,
+        y: (clientY - rect.top - panY) / zoom,
+      };
+    }
+
+    function fitToView() {
+      const availableWidth = Math.max(360, graph.clientWidth - 28);
+      const availableHeight = Math.max(360, graph.clientHeight - 28);
+      const fitZoom = Math.min(1, availableWidth / currentGraph.width, availableHeight / currentGraph.height);
+      zoom = Math.min(1, Math.max(.48, fitZoom));
+      panX = 14;
+      panY = 6;
+      updateTransform();
+    }
+
+    function setZoom(nextZoom, clientX, clientY) {
+      const oldZoom = zoom;
+      const clamped = Math.max(.35, Math.min(2.4, nextZoom));
+      const rect = graph.getBoundingClientRect();
+      const graphX = (clientX || rect.left + graph.clientWidth / 2) - rect.left;
+      const graphY = (clientY || rect.top + graph.clientHeight / 2) - rect.top;
+      const worldX = (graphX - panX) / oldZoom;
+      const worldY = (graphY - panY) / oldZoom;
+      zoom = clamped;
+      panX = graphX - worldX * zoom;
+      panY = graphY - worldY * zoom;
+      updateTransform();
+    }
+
+    function startNodeDrag(event) {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const nodeId = event.currentTarget.dataset.nodeId;
+      const pos = currentGraph.positions.get(nodeId);
+      draggedNodeId = nodeId;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      const pointer = screenToWorld(event.clientX, event.clientY);
+      event.currentTarget.dataset.offsetX = String(pointer.x - pos.x);
+      event.currentTarget.dataset.offsetY = String(pointer.y - pos.y);
+    }
+
+    function showDetails(node) {
+      const isData = node.nodeType === "data";
+      const planType = String(currentPlan?.planning_detail_type || currentPlan?.plan_detail || "executable").toLowerCase();
+      const showCode = planType !== "conceptual";
+      detailsTitle.textContent = isData ? "Data Details" : "Step Details";
+      if (isData) {
+        const producedBy = node.producedBy ? (currentGraph.nodes.find((item) => item.id === node.producedBy)?.label || node.producedBy) : "-";
+        details.innerHTML = `
+          <h3>${escapeHtml(node.label)}</h3>
+          <p>${escapeHtml(node.description || "")}</p>
+          <p><strong>Role:</strong> ${escapeHtml(node.role || "artifact")}</p>
+          <p><strong>Variable:</strong> <code>${escapeHtml(node.variableName || "user_goal")}</code></p>
+          <p><strong>Produced by:</strong> ${escapeHtml(producedBy)}</p>
+          ${showCode ? `<h3>Python Code</h3><pre class="code-snippet">${highlightPython(buildDataNodeCode(node))}</pre>` : ""}
+        `;
+        return;
+      }
+      const step = node.step || {};
+      details.innerHTML = `
+        <h3>${escapeHtml(step.title || node.label)}</h3>
+        <p>${escapeHtml(step.purpose || node.description || "")}</p>
+        <p><strong>Agent:</strong> <code>${escapeHtml(step.agent_id || "-")}</code></p>
+        <p><strong>Match status:</strong> ${escapeHtml(step.match_status || (step.agent_id ? "matched" : "unmatched"))}</p>
+        ${step.required_capability ? `<p><strong>Required capability:</strong> ${escapeHtml(step.required_capability)}</p>` : ""}
+        ${step.recommended_action ? `<p><strong>Recommended action:</strong> ${escapeHtml(step.recommended_action)}</p>` : ""}
+        <p><strong>Planning Type:</strong> ${escapeHtml(currentPlan?.planning_detail_type || currentPlan?.plan_detail || "-")}</p>
+        <p><strong>Depends on:</strong> ${escapeHtml((step.depends_on || []).join(", ") || "none")}</p>
+        <p><strong>Expected outputs:</strong> ${escapeHtml(listLabels(step.expected_outputs))}</p>
+        ${showCode && step.instructions ? `<p><strong>Instructions:</strong></p><pre>${escapeHtml(step.instructions)}</pre>` : ""}
+        ${showCode ? `<h3>Python Code</h3><pre class="code-snippet">${highlightPython(buildOperationCode(node, step))}</pre>` : ""}
+      `;
+    }
+
+    function applySpacingForces(iterations = 1, preserveDragged = true) {
+      if (!currentGraph.nodes.length) return;
+      for (let iteration = 0; iteration < iterations; iteration += 1) {
+        for (let a = 0; a < currentGraph.nodes.length; a += 1) {
+          for (let b = a + 1; b < currentGraph.nodes.length; b += 1) {
+            const nodeA = currentGraph.nodes[a];
+            const nodeB = currentGraph.nodes[b];
+            if (nodeA.role === "goal" || nodeB.role === "goal") continue;
+            const posA = currentGraph.positions.get(nodeA.id);
+            const posB = currentGraph.positions.get(nodeB.id);
+            if (!posA || !posB) continue;
+            const sizeA = nodeSize(nodeA.id);
+            const sizeB = nodeSize(nodeB.id);
+            const centerA = { x: posA.x + sizeA.width / 2, y: posA.y + sizeA.height / 2 };
+            const centerB = { x: posB.x + sizeB.width / 2, y: posB.y + sizeB.height / 2 };
+            const minX = (sizeA.width + sizeB.width) / 2 + 92;
+            const minY = (sizeA.height + sizeB.height) / 2 + 76;
+            const dx = centerB.x - centerA.x || 1;
+            const dy = centerB.y - centerA.y || 1;
+            if (Math.abs(dx) >= minX || Math.abs(dy) >= minY) continue;
+            const pushX = Math.sign(dx) * Math.min(14, (minX - Math.abs(dx)) * 0.09);
+            const pushY = Math.sign(dy) * Math.min(12, (minY - Math.abs(dy)) * 0.09);
+            if (!preserveDragged || nodeA.id !== draggedNodeId) {
+              posA.x -= pushX;
+              posA.y -= pushY;
+              clampPosition(posA);
+              placeNode(nodeA.id);
+            }
+            if (!preserveDragged || nodeB.id !== draggedNodeId) {
+              posB.x += pushX;
+              posB.y += pushY;
+              clampPosition(posB);
+              placeNode(nodeB.id);
+            }
+          }
+        }
+      }
+    }
+
+    function relaxLayout() {
+      applySpacingForces(2, true);
+      if (gravityForceInput.checked) {
+        applySpringForces(2, true);
+        applySpacingForces(1, true);
+      }
+    }
+
+    function applySpringForces(iterations = 1, preserveDragged = true) {
+      if (!currentGraph.nodes.length || !currentGraph.edges.length) return;
+      const idealDistance = 360;
+      const strength = 0.024;
+      for (let iteration = 0; iteration < iterations; iteration += 1) {
+        currentGraph.edges.forEach((edge) => {
+          const sourcePos = currentGraph.positions.get(edge.source);
+          const targetPos = currentGraph.positions.get(edge.target);
+          if (!sourcePos || !targetPos) return;
+          const sourceSize = nodeSize(edge.source);
+          const targetSize = nodeSize(edge.target);
+          const sourceCenter = {
+            x: sourcePos.x + sourceSize.width / 2,
+            y: sourcePos.y + sourceSize.height / 2,
+          };
+          const targetCenter = {
+            x: targetPos.x + targetSize.width / 2,
+            y: targetPos.y + targetSize.height / 2,
+          };
+          const dx = targetCenter.x - sourceCenter.x || 1;
+          const dy = targetCenter.y - sourceCenter.y || 1;
+          const distance = Math.max(1, Math.hypot(dx, dy));
+          const force = (distance - idealDistance) * strength;
+          const moveX = (dx / distance) * force;
+          const moveY = (dy / distance) * force;
+          const sourceLocked = preserveDragged && edge.source === draggedNodeId;
+          const targetLocked = preserveDragged && edge.target === draggedNodeId;
+
+          if (sourceLocked && !targetLocked) {
+            targetPos.x -= moveX;
+            targetPos.y -= moveY;
+            clampPosition(targetPos);
+            placeNode(edge.target);
+          } else if (targetLocked && !sourceLocked) {
+            sourcePos.x += moveX;
+            sourcePos.y += moveY;
+            clampPosition(sourcePos);
+            placeNode(edge.source);
+          } else {
+            if (!sourceLocked) {
+              sourcePos.x += moveX * 0.5;
+              sourcePos.y += moveY * 0.5;
+              clampPosition(sourcePos);
+              placeNode(edge.source);
+            }
+            if (!targetLocked) {
+              targetPos.x -= moveX * 0.5;
+              targetPos.y -= moveY * 0.5;
+              clampPosition(targetPos);
+              placeNode(edge.target);
+            }
+          }
+        });
+      }
+    }
+
+    function clampPosition(pos) {
+      const marginX = 900;
+      const marginY = 700;
+      pos.x = Math.max(-marginX, Math.min(currentGraph.width + marginX, pos.x));
+      pos.y = Math.max(-marginY, Math.min(currentGraph.height + marginY, pos.y));
+    }
+
+    function exportGraphPng() {
+      if (!currentGraph.nodes.length) return;
+      const scale = 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = currentGraph.width * scale;
+      canvas.height = currentGraph.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, currentGraph.width, currentGraph.height);
+      ctx.strokeStyle = "#eef2f7";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < currentGraph.width; x += 32) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, currentGraph.height); ctx.stroke();
+      }
+      for (let y = 0; y < currentGraph.height; y += 32) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(currentGraph.width, y); ctx.stroke();
+      }
+      currentGraph.edges.forEach((edge) => drawCanvasEdge(ctx, edge));
+      currentGraph.nodes.forEach((node) => drawCanvasNode(ctx, node));
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "gas_workflow_graph.png";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      }, "image/png");
+    }
+
+    function drawCanvasEdge(ctx, edge) {
+      const sourceCenter = nodeCenter(edge.source);
+      const targetCenter = nodeCenter(edge.target);
+      const start = boundaryPoint(edge.source, targetCenter);
+      const end = boundaryPoint(edge.target, sourceCenter);
+      ctx.strokeStyle = "#52667f";
+      ctx.fillStyle = "#52667f";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const distance = Math.hypot(end.x - start.x, end.y - start.y);
+      let angle = Math.atan2(end.y - start.y, end.x - start.x);
+      if (curveEdgesInput.checked && distance > 80) {
+        const curve = curvedEdgeControls(start, end);
+        ctx.moveTo(start.x, start.y);
+        ctx.bezierCurveTo(curve.c1.x, curve.c1.y, curve.c2.x, curve.c2.y, end.x, end.y);
+        angle = Math.atan2(end.y - curve.c2.y, end.x - curve.c2.x);
+      } else {
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+      }
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - 12 * Math.cos(angle - Math.PI / 6), end.y - 12 * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - 12 * Math.cos(angle + Math.PI / 6), end.y - 12 * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawCanvasNode(ctx, node) {
+      const pos = currentGraph.positions.get(node.id);
+      const size = nodeSize(node.id);
+      const radius = node.role === "goal" || node.role === "final" ? Math.min(size.width, size.height) / 2 : 8;
+      ctx.save();
+      ctx.fillStyle = node.role === "goal" ? "#bfdcff" : node.role === "final" ? "#dff4d8" : node.role === "unmatched" ? "#ffe8e8" : node.nodeType === "data" ? "#fff8d8" : "#eaf3ff";
+      ctx.strokeStyle = node.role === "goal" ? "#2563a8" : node.role === "final" ? "#4b9b46" : node.role === "unmatched" ? "#d65a5a" : node.nodeType === "data" ? "#d4a72c" : "#6b93c6";
+      ctx.lineWidth = 1.5;
+      roundedRectPath(ctx, pos.x, pos.y, size.width, size.height, node.nodeType === "data" ? Math.min(42, size.height / 2) : radius);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#0f2f55";
+      ctx.textAlign = "center";
+      ctx.font = "bold 12px Arial";
+      drawWrappedText(ctx, objectLabel(node.label), pos.x + size.width / 2, pos.y + 24, size.width - 24, 15, 2);
+      ctx.fillStyle = "#44546a";
+      ctx.font = "11px Arial";
+      drawWrappedText(ctx, objectLabel(node.description), pos.x + size.width / 2, pos.y + 52, size.width - 24, 14, 2);
+      ctx.restore();
+    }
+
+    function roundedRectPath(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function drawWrappedText(ctx, text, centerX, y, maxWidth, lineHeight, maxLines) {
+      const words = objectLabel(text).split(/\s+/);
+      let line = "";
+      let lines = [];
+      words.forEach((word) => {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      });
+      if (line) lines.push(line);
+      lines.slice(0, maxLines).forEach((item, index) => {
+        ctx.fillText(index === maxLines - 1 && lines.length > maxLines ? item + "..." : item, centerX, y + index * lineHeight);
+      });
+    }
+
+    graph.addEventListener("pointerdown", (event) => {
+      if (event.target.closest(".toolbar") || event.target.closest(".node")) return;
+      panStart = { x: event.clientX, y: event.clientY, panX, panY };
+      graph.classList.add("panning");
+      graph.setPointerCapture(event.pointerId);
+    });
+    graph.addEventListener("pointermove", (event) => {
+      if (draggedNodeId) {
+        const el = currentGraph.elements.get(draggedNodeId);
+        const pos = currentGraph.positions.get(draggedNodeId);
+        const pointer = screenToWorld(event.clientX, event.clientY);
+        pos.x = pointer.x - Number(el.dataset.offsetX || 0);
+        pos.y = pointer.y - Number(el.dataset.offsetY || 0);
+        clampPosition(pos);
+        placeNode(draggedNodeId);
+        relaxLayout();
+        renderEdges();
+      } else if (panStart) {
+        panX = panStart.panX + event.clientX - panStart.x;
+        panY = panStart.panY + event.clientY - panStart.y;
+        updateTransform();
+      }
+    });
+    graph.addEventListener("pointerup", (event) => {
+      if (draggedNodeId) {
+        const el = currentGraph.elements.get(draggedNodeId);
+        try { el.releasePointerCapture(event.pointerId); } catch (_) {}
+      }
+      draggedNodeId = null;
+      panStart = null;
+      graph.classList.remove("panning");
+    });
+    graph.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      setZoom(zoom * (event.deltaY > 0 ? .9 : 1.1), event.clientX, event.clientY);
+    }, { passive: false });
+
+    document.getElementById("zoomIn").addEventListener("click", () => setZoom(zoom * 1.18));
+    document.getElementById("zoomOut").addEventListener("click", () => setZoom(zoom * .85));
+    document.getElementById("zoomFit").addEventListener("click", fitToView);
+    document.getElementById("savePng").addEventListener("click", exportGraphPng);
+    document.getElementById("toggleControls").addEventListener("click", (event) => {
+      appMain.classList.toggle("controls-hidden");
+      const hidden = appMain.classList.contains("controls-hidden");
+      event.currentTarget.textContent = hidden ? "›" : "‹";
+      event.currentTarget.title = hidden ? "Expand request panel" : "Collapse request panel";
+      event.currentTarget.setAttribute("aria-label", hidden ? "Expand request panel" : "Collapse request panel");
+      setTimeout(() => {
+        if (currentGraph.nodes.length) fitToView();
+      }, 120);
+    });
+    document.getElementById("toggleDetails").addEventListener("click", (event) => {
+      graphShell.classList.toggle("details-hidden");
+      event.currentTarget.textContent = graphShell.classList.contains("details-hidden") ? "Show details" : "Hide details";
+    });
+    curveEdgesInput.addEventListener("change", renderEdges);
+    gravityForceInput.addEventListener("change", () => {
+      if (gravityForceInput.checked) {
+        applySpringForces(90, false);
+        applySpacingForces(120, false);
+        renderEdges();
+      } else {
+        renderEdges();
+      }
+    });
+    async function handleStreamResponse(response) {
+      const reader = response.body && response.body.getReader ? response.body.getReader() : null;
+      if (!reader) {
+        const text = await response.text();
+        text.split(/\r?\n/).filter(Boolean).forEach((line) => handleStreamEvent(JSON.parse(line)));
+        return;
+      }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed) handleStreamEvent(JSON.parse(trimmed));
+        }
+      }
+      if (buffer.trim()) handleStreamEvent(JSON.parse(buffer.trim()));
+    }
+
+    function handleStreamEvent(event) {
+      appendEvent(event);
+      if (event.task_id) taskIdText.textContent = `Task ID: ${event.task_id}`;
+      if (["stream_connected", "task_accepted", "progress"].includes(event.event)) {
+        setStatus("Running", "running");
+      } else if (event.event === "task_succeeded") {
+        setStatus("Completed", "success");
+      } else if (event.event === "task_failed") {
+        setStatus("Failed", "error");
+      } else if (event.event === "task_result") {
+        showTaskResult(event.payload || {});
+        const status = event.payload && event.payload.task && event.payload.task.status;
+        setStatus(status === "successful" ? "Completed" : "Finished", status === "successful" ? "success" : "error");
+      }
+    }
+
+    async function submitTask() {
+      const baseUrl = normalizeBaseUrl(serverUrlInput.value);
+      const endpoint = `${baseUrl}/agents/${planningAgentId}/tasks`;
+      const body = buildRequestBody();
+      clearOutput();
+      activeController = new AbortController();
+      submitBtn.disabled = true;
+      stopBtn.disabled = false;
+      setStatus("Connecting", "running");
+      appendEvent({ event: "request", message: `POST ${endpoint}` });
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: activeController.signal,
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+        }
+        await handleStreamResponse(response);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          appendEvent({ event: "stream_stopped", message: "The browser stopped reading the stream." });
+          setStatus("Stopped", "");
+        } else {
+          appendEvent({ event: "error", message: error.message || String(error) });
+          setStatus("Error", "error");
+        }
+      } finally {
+        submitBtn.disabled = false;
+        stopBtn.disabled = true;
+        activeController = null;
+      }
+    }
+
+    submitBtn.addEventListener("click", () => {
+      try {
+        submitTask();
+      } catch (error) {
+        appendEvent({ event: "error", message: error.message || String(error) });
+        setStatus("Error", "error");
+      }
+    });
+    stopBtn.addEventListener("click", () => activeController && activeController.abort());
+    clearBtn.addEventListener("click", clearOutput);
+    toggleStreamBtn.addEventListener("click", () => {
+      streamPanel.classList.toggle("collapsed");
+      toggleStreamBtn.textContent = streamPanel.classList.contains("collapsed") ? "Show stream" : "Hide stream";
+    });
+    window.GASWorkflowPlanningApp = {
+      buildGraphFromPlan,
+      renderWorkflowPlan,
+      clearOutput,
+    };
+    clearOutput();
+  </script>
+</body>
+</html>

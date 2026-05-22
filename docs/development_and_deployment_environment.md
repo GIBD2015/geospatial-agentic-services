@@ -56,6 +56,7 @@ Useful commands:
 
 ```powershell
 python -m gas_server.entrypoints.gas_server
+python -m gas_registry.app
 python -m pytest --basetemp .tmp_pytest_run\local -p no:cacheprovider
 ```
 
@@ -86,6 +87,33 @@ gas_server/core/config.py
 
 The Flask development server is useful for local development, testing,
 notebooks, and demos. It should not be treated as the production web server.
+
+## Run The GAS Registry Locally
+
+The repository also includes the GAS Registry, a catalog web app for indexing
+published GAS services from one or more GAS servers. The public registry is:
+
+```text
+http://geospatial-agentic-services.online/registry
+```
+
+For local testing, run the registry as a separate process from the GAS server.
+The registry uses port `4043` by default so it does not conflict with the GAS
+server's default port `4042`.
+
+```powershell
+python -m gas_registry.app
+```
+
+Then open:
+
+```text
+http://127.0.0.1:4043/registry
+```
+
+The registry stores fetched agent metadata in a local SQLite database under
+`gas_registry/`. This database is runtime state and is ignored by Git. See
+[gas_registry.md](gas_registry.md) for registration workflow and API examples.
 
 ## Get Capabilities Test
 

@@ -6,6 +6,12 @@ web services and provides the shared server framework for discovery,
 task execution, streaming progress, artifact delivery, and standard response
 normalization.
 
+The repository also includes the GAS Registry, a lightweight catalog web app
+for indexing `GetCapabilities` and `DescribeAgent` documents from one or more
+GAS servers. The public registry is available at
+[http://geospatial-agentic-services.online/registry](http://geospatial-agentic-services.online/registry),
+and the local implementation is documented in [gas_registry.md](gas_registry.md).
+
 One important design goal is plugin-style extension: a developer should be able
 to add a new geospatial agent by adding a small number of files, without
 editing the shared code files.
@@ -153,6 +159,7 @@ gas_server/
   static/
 
 gas_client/
+gas_registry/
 docs/
 Data/
 Output/
@@ -337,6 +344,24 @@ This folder contains a lightweight Python client for GAS. It can:
 
 The client is useful for testing the server and for showing how external users
 or AI orchestrators can consume GAS services.
+
+### `gas_registry`
+
+This folder contains the GAS Registry web app. It is a companion catalog
+application that reads GAS capability documents from published GAS servers,
+stores agent descriptions in SQLite, and presents them as searchable cards or
+list rows. It supports discovery across multiple GAS servers without executing
+agent tasks itself.
+
+The registry exposes its own discovery-style API under:
+
+```text
+/registry/api/gas
+```
+
+It also links users back to the original `DescribeAgent` document on the source
+GAS server. See [gas_registry.md](gas_registry.md) for run commands and API
+examples.
 
 ### `Data` and `Output`
 

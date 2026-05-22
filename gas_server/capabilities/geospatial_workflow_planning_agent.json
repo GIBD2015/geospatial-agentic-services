@@ -1,0 +1,230 @@
+{
+  "$schema": "https://www.geospatial-agentic-services.online/schemas/describe_agent.schema.json",
+  "profile": {
+    "agent_id": "geospatial_workflow_planning_agent",
+    "name": "Geospatial Workflow Planning Agent",
+    "description": "This agent discovers GAS server capabilities, reads DescribeAgent documents, decomposes a natural-language geospatial goal into workflow steps, matches each step to suitable GAS agent services, and returns client-side workflow planning artifacts. It can generate machine-readable plans, human-readable plans, GAS Client Python code, notebook skeletons, and interactive HTML workflow graphs. It does not execute downstream GAS services.",
+    "version": "1.0.0",
+    "base_url": "https://www.geospatial-agentic-services.online/agents/geospatial_workflow_planning_agent",
+    "last_updated": "2026-05-20",
+    "provider": {
+      "name": "Geoinformation and Big Data Research Lab (GIBD)",
+      "website": "https://giscience.psu.edu",
+      "contacts": [
+        {
+          "name": "Zhenlong Li",
+          "email": "zhenlong@psu.edu"
+        }
+      ]
+    },
+    "default_model": "gpt-5.2"
+  },
+  "keywords": [
+    "workflow planning",
+    "service composition",
+    "GAS capabilities",
+    "agent matching",
+    "orchestration",
+    "workflow graph",
+    "client-side execution"
+  ],
+  "skills": [
+    {
+      "skill_id": "gas_capability_discovery",
+      "name": "GAS Capability Discovery",
+      "description": "Reads one or more GAS GetCapabilities URLs, follows each agent's DescribeAgent document, and builds a capability catalog for workflow planning.",
+      "constraints": {
+        "spatial": "Depends on the spatial domains, formats, and constraints advertised by the discovered GAS agents.",
+        "temporal": null,
+        "other": [
+          "Remote GAS capability URLs must be reachable from the server runtime.",
+          "Capability matching is limited to the information documented in GetCapabilities and DescribeAgent responses."
+        ]
+      }
+    },
+    {
+      "skill_id": "geospatial_workflow_planning",
+      "name": "Geospatial Workflow Planning",
+      "description": "Decomposes a user goal into the simplest valid workflow, selects suitable GAS agent services, recommends execution modes, records dependencies, identifies missing capabilities, and returns selected plan artifacts.",
+      "constraints": {
+        "spatial": "Generated steps should include spatial validation tasks when the workflow requires CRS checks, raster/vector overlap, join-key checks, clipping, overlay, sampling, or mapping.",
+        "temporal": null,
+        "other": [
+          "The agent is plan-only and does not execute generated Python code, notebooks, or downstream GAS service calls.",
+          "Generated workflow code should be reviewed by the client before execution.",
+          "The planner reports unmatched steps when no suitable advertised agent capability is available."
+        ]
+      }
+    }
+  ],
+  "execute_task": {
+    "operation_id": "execute_task",
+    "name": "ExecuteTask",
+    "description": "Submits a natural-language geospatial workflow planning task. The task.mode field controls sync, async, or stream execution.",
+    "request_schema": "https://www.geospatial-agentic-services.online/schemas/execute_task_request.schema.json",
+    "response_schema": "https://www.geospatial-agentic-services.online/schemas/task_response.schema.json",
+    "modes": [
+      "sync",
+      "async",
+      "stream"
+    ],
+    "task": {
+      "instructions": {
+        "required": true,
+        "description": "Natural-language workflow goal to plan, such as a multi-step data retrieval, analysis, mapping, and reporting workflow."
+      }
+    },
+    "inputs": {
+      "input_datasets": {
+        "required": false,
+        "description": "Optional datasets or artifact URLs that should be considered as existing inputs to the planned workflow. Each item may be an HTTP/HTTPS URL, a server-accessible path, or a base64-encoded file object with filename, data, and optional mime_type.",
+        "supported_item_types": [
+          "URL",
+          "server_path",
+          "encoded_file_object"
+        ]
+      }
+    },
+    "outputs": {
+      "artifact_delivery": {
+        "required": false,
+        "default": "URL",
+        "allowed_values": [
+          "URL",
+          "Encoded"
+        ],
+        "description": "How generated planning artifacts are delivered in the standard response: 'URL' (default) or 'Encoded'."
+      },
+      "primary_artifacts": [
+        {
+          "type": "workflow_visualization",
+          "formats": [
+            "HTML"
+          ],
+          "required": true,
+          "description": "Interactive HTML graph generated from a NetworkX data-operation workflow graph. Operation nodes represent ordered GAS service calls, data nodes represent input and output artifacts, and arrowed edges connect data to operations or operations to data. The graph is laid out generally from left to right, supports zoom controls, drag-based force relaxation, and a collapsible detail panel."
+        },
+        {
+          "type": "workflow_plan",
+          "formats": [
+            "JSON"
+          ],
+          "required": true,
+          "description": "Machine-readable GAS workflow plan artifact."
+        },
+        {
+          "type": "workflow_code",
+          "formats": [
+            "Jupyter Notebook"
+          ],
+          "required": false,
+          "description": "Optional client-side notebook skeleton. The planning agent returns this notebook but does not run it."
+        },
+        {
+          "type": "additional_planning_artifacts",
+          "formats": [
+            "Markdown",
+            "Python"
+          ],
+          "required": false,
+          "description": "Optional human-readable Markdown plan and GAS Client Python workflow script when explicitly requested with plan_outputs."
+        }
+      ]
+    },
+    "parameters": {
+      "model": {
+        "required": false,
+        "default": "gpt-5.2",
+        "description": "Optional model override. If omitted, the agent uses its default model for multi-step service discovery, agent matching, dependency planning, and workflow graph generation."
+      },
+      "gas_servers": {
+        "required": false,
+        "default": "current_server_local_capabilities",
+        "description": "Optional GAS GetCapabilities URL or array of URLs. If omitted, the agent uses the current server's local capability documents."
+      },
+      "plan_outputs": {
+        "required": false,
+        "default": [
+          "interactive_workflow_graph",
+          "workflow_json",
+          "notebook_skeleton"
+        ],
+        "allowed_values": [
+          "interactive_workflow_graph",
+          "workflow_json",
+          "human_readable",
+          "gas_client_python",
+          "notebook_skeleton"
+        ],
+        "description": "Selects which planning artifacts to return. The default returns the interactive workflow graph first, followed by the machine-readable workflow JSON and notebook skeleton. Markdown and Python artifacts are returned only when explicitly requested."
+      },
+      "plan_detail": {
+        "required": false,
+        "default": "executable",
+        "allowed_values": [
+          "conceptual",
+          "executable"
+        ],
+        "description": "Controls plan detail. 'conceptual' returns a high-level service-composition and data-flow plan without runnable instructions or execution modes. 'executable' returns a detailed plan suitable for client-side orchestration, including downstream agent instructions and execution guidance. Both modes favor the fewest necessary workflow steps by default."
+      },
+      "include_validation_steps": {
+        "required": false,
+        "default": true,
+        "description": "If true, the plan should include validation checks such as CRS compatibility, artifact availability, join-key checks, raster/vector overlap, and map output review. This does not add the Geospatial Data Inspection Agent as an executable workflow step unless the user explicitly asks for data inspection, quality assessment, validation, or readiness checking."
+      },
+      "max_steps": {
+        "required": false,
+        "default": 12,
+        "description": "Maximum number of workflow steps requested from the planner."
+      },
+      "requested_skill": {
+        "required": false,
+        "description": "Advanced optional skill-selection hint. Most clients should omit this."
+      }
+    },
+    "credentials": {
+      "required": true,
+      "one_of": [
+        "OPENAI_API_KEY"
+      ],
+      "description": "Provide one model execution credential in the request credentials object. The planning agent uses an LLM to interpret the workflow goal and match steps to discovered GAS capabilities."
+    }
+  },
+  "conformance": {
+    "gas_version": "1.0.0",
+    "schemas": {
+      "describe_agent": "https://www.geospatial-agentic-services.online/schemas/describe_agent.schema.json",
+      "task_response": "https://www.geospatial-agentic-services.online/schemas/task_response.schema.json",
+      "execute_task_request": "https://www.geospatial-agentic-services.online/schemas/execute_task_request.schema.json"
+    }
+  },
+  "provenance_and_reproducibility": {
+    "provenance": {
+      "supported": true,
+      "description": "Includes discovered server count, discovered agent count, llm_calls, tool_calls, token usage, duration, artifact count, and workflow lineage in the standard response."
+    },
+    "reproducibility": {
+      "supported": true,
+      "description": "Returns the selected planning parameters, discovered capability sources, generated workflow plan, and optional client-side Python or notebook artifacts. The downstream workflow is not executed by this agent."
+    },
+    "validation": {
+      "supported": true,
+      "description": "Validates that capabilities were discovered, workflow steps were produced, dependencies were normalized into a connected dataflow where possible, and requested planning artifacts were written. Plan correctness still depends on the quality and completeness of the advertised capability documents."
+    }
+  },
+  "governance": {
+    "access_control": {
+      "description": "No role-based access control is enforced by the built-in implementation."
+    },
+    "operation_policy": {
+      "description": "The agent only plans workflows and generates client-side artifacts. It does not execute generated code, call downstream GAS agents, or download/process datasets as part of the planned workflow."
+    },
+    "review_policy": {
+      "description": "Human review is recommended before running generated GAS Client Python code or notebook workflows."
+    },
+    "policy_notes": "Workflow plans are advisory service-composition artifacts. Clients and AI orchestrators should review credentials, data licensing, runtime costs, and domain assumptions before execution."
+  },
+  "extensions": {
+    "description": "This agent operationalizes GAS capability-based discovery and composition. It can plan across the current GAS Server or one or more remote GAS servers by reading GetCapabilities and DescribeAgent documents. It uses a practical default model for multi-step workflow decomposition, capability matching, and dependency planning, while still allowing clients to override the model per request when they need stronger reasoning or different latency/cost tradeoffs. By default, it favors the simplest valid workflow: independent retrieval branches stay parallel, related analysis operations are combined into one suitable analysis agent step when possible, and only one final mapping or reporting step is added unless the user asks for more. Supported plan output options are interactive_workflow_graph, workflow_json, notebook_skeleton, human_readable, and gas_client_python. The default artifacts are interactive_workflow_graph, workflow_json, and notebook_skeleton. The interactive graph is built from a NetworkX DiGraph with a user-goal node, ordered operation nodes, data/output artifact nodes, and a final-output node style. Workflow dependencies pass through concrete input/output artifacts rather than directly connecting operations. The agent normalizes and repairs omitted dependency references where possible, while keeping independent data retrieval branches separate unless they explicitly consume prior outputs. The generated Python and notebook artifacts are execution-ready skeletons returned to the client for optional client-side execution."
+  }
+}

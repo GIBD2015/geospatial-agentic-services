@@ -4,6 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](pyproject.toml)
 [![GAS Client on PyPI](https://img.shields.io/pypi/v/gas-client.svg)](https://pypi.org/project/gas-client/)
 [![GAS Paper](https://img.shields.io/badge/GAS-Paper-green.svg)](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence)
+[![GAS Registry](https://img.shields.io/badge/GAS-Registry-256b7f.svg)](http://geospatial-agentic-services.online/registry)
 [![GIBD Lab](https://img.shields.io/badge/GIBD-Lab-lightgrey.svg)](https://giscience.psu.edu/)
 
 This repository provides a concrete implementation of the server component of
@@ -14,12 +15,18 @@ as independent web services, discoverable through
 The [included agents](docs/included_agents.md) are working GAS services and
 implementation examples. Developers can use them as references for different
 design patterns, including deterministic geospatial workflows, model-assisted
-code generation, data retrieval, mapping, raster analysis, vector analysis,
-data inspection, and spatial statistics.
+code generation, data retrieval, workflow planning, mapping, raster analysis,
+vector analysis, data inspection, and spatial statistics.
 
 For the conceptual framework behind this implementation, please refer to the
 GAS paper: [Geospatial Agentic Services: A Framework for Interoperable
 Geospatial Intelligence](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence).
+
+The public [GAS Registry](http://geospatial-agentic-services.online/registry)
+is a searchable catalog of published GAS agent services. It reads GAS
+`GetCapabilities` and `DescribeAgent` documents from registered servers and
+helps users, applications, and AI orchestrators discover interoperable
+geospatial agents.
 
 ## Run the GAS Server
 
@@ -191,6 +198,9 @@ included agents and the implementation patterns they demonstrate.
 See [docs/gas_interfaces.md](docs/gas_interfaces.md) for the GAS
 interfaces that define service discovery, agent description, task submission,
 standard task responses, and artifact metadata.
+
+See [docs/gas_registry.md](docs/gas_registry.md) for the registry web app,
+public registry URL, local run instructions, and registry API examples.
 
 See [docs/development_and_deployment_environment.md](docs/development_and_deployment_environment.md)
 for local development setup, VS Code workflow, ngrok demos, server resource

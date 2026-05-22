@@ -46,6 +46,7 @@ dependencies = [
   "rioxarray>=0.15",
   "pandas>=2.0",
   "numpy>=1.24",
+  "networkx>=3.0",
   "scipy>=1.10",
   "matplotlib>=3.7",
   "mapclassify>=2.6",
@@ -83,6 +84,7 @@ gas-server = "gas_server.entrypoints.gas_server:main"
 [tool.setuptools]
 packages = [
   "gas_client",
+  "gas_registry",
   "gas_server",
   "gas_server.core",
   "gas_server.agents",
@@ -96,6 +98,7 @@ packages = [
 gas_server = ["static/*"]
 "gas_server.capabilities" = ["*.json"]
 "gas_server.schemas" = ["*.json"]
+"gas_registry" = ["index.html"]
 "gas_server.agents" = [
   "geospatial_data_retrieval_handbooks/*.toml",
 ]

@@ -120,8 +120,7 @@
     "credentials": {
       "required": true,
       "one_of": [
-        "OPENAI_API_KEY",
-        "GIBD_API_KEY"
+        "OPENAI_API_KEY"
       ],
       "description": "Provide one model execution credential in the request credentials object."
     }

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve the GAS server and client.
+Thanks for helping improve the GAS server and client, and contributing to the new geospatial agentic services development.
 
 ## Development Setup
 

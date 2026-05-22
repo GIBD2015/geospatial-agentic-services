@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAS Store</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-color: #007aff;
+            --primary-action: #256b7f;
+            --primary-action-hover: #1f5a6b;
+            --btn-bg: #f0f0f5;
+            --btn-hover: #e4e4eb;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            position: relative;
+            text-align: center;
+            padding: 60px 20px 40px;
+        }
+        .project-link {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #f0f6fc;
+            background: #24292f;
+            border: 1px solid #57606a;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(36,41,47,0.18);
+        }
+        .project-link:hover {
+            transform: translateY(-1px);
+            background: #32383f;
+            box-shadow: 0 10px 24px rgba(36,41,47,0.26);
+        }
+        .project-link svg {
+            width: 17px;
+            height: 17px;
+            fill: currentColor;
+            flex: 0 0 auto;
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            margin: 0;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin: 8px 0 0 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .container.list-view {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 360px;
+            min-height: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+        }
+        .container.list-view .card {
+            height: auto;
+            min-height: 0;
+            border-radius: 18px;
+            padding: 18px 22px;
+            gap: 10px;
+        }
+        .container.list-view .card:hover {
+            transform: translateY(-2px);
+        }
+        .container.list-view .card-header {
+            align-items: flex-start;
+        }
+        .container.list-view .icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 13px;
+            font-size: 24px;
+        }
+        .container.list-view .title {
+            font-size: 18px;
+        }
+        .container.list-view .divider {
+            margin: 2px 0;
+        }
+        .container.list-view .description {
+            flex: 0 1 auto;
+            max-height: 3.1em;
+            overflow: hidden;
+        }
+        .container.list-view .citation {
+            margin-top: 0;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .icon {
+            width: 68px;
+            height: 68px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            color: white;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+        }
+
+        .icon-vector { background: linear-gradient(135deg, #FF9500, #FF5E3A); }
+        .icon-raster { background: linear-gradient(135deg, #34C759, #28A745); }
+        .icon-pasda { background: linear-gradient(135deg, #007AFF, #0056B3); }
+        .icon-mapping { background: linear-gradient(135deg, #AF52DE, #8944AB); }
+        .icon-projection { background: linear-gradient(135deg, #FF2D55, #D92045); }
+        .icon-retriever { background: linear-gradient(135deg, #5AC8FA, #3DA2C8); }
+        .icon-inspection { background: linear-gradient(135deg, #30D5C8, #0E9594); }
+        .icon-webmap { background: linear-gradient(135deg, #FFCC00, #FF9F0A); }
+        .icon-stats { background: linear-gradient(135deg, #BF5AF2, #6A5ACD); }
+
+        .title-group {
+            flex: 1;
+        }
+
+        .title {
+            font-size: 19px;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .version {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 4px 0 0 0;
+            font-weight: 500;
+        }
+        .server-url {
+            font-size: 12px;
+            color: #5f6368;
+            margin: 4px 0 0 0;
+            line-height: 1.25;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .get-btn {
+            background-color: var(--btn-bg);
+            color: var(--accent-color);
+            border: none;
+            border-radius: 16px;
+            padding: 6px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .get-btn:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .description {
+            font-size: 15px;
+            line-height: 1.45;
+            color: #515154;
+            margin: 0;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            padding-right: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: #c7c7cc transparent;
+        }
+        .description::-webkit-scrollbar { width: 6px; }
+        .description::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 3px; }
+        .description::-webkit-scrollbar-track { background: transparent; }
+
+        .divider {
+            height: 1px;
+            background-color: #e5e5ea;
+            margin: 4px 0;
+        }
+
+        .citation {
+            font-size: 11px;
+            color: #a1a1a6;
+            margin-top: auto;
+            word-break: break-all;
+        }
+
+        .citation a,
+        .citation button {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .citation a:hover,
+        .citation button:hover {
+            text-decoration: underline;
+        }
+
+        .api-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .api-link {
+            display: inline-block;
+            text-decoration: none;
+            background-color: var(--btn-bg);
+            color: var(--accent-color);
+            border-radius: 12px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+
+        .api-link:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .title.clickable { cursor: pointer; transition: color 0.2s ease; }
+        .title.clickable:hover { color: var(--accent-color); }
+
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center; justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-content {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 720px; width: 100%;
+            max-height: 85vh; overflow-y: auto;
+            padding: 32px 36px;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            -webkit-overflow-scrolling: touch;
+        }
+        .modal-close {
+            position: absolute; top: 14px; right: 14px;
+            background: var(--btn-bg); border: none;
+            width: 36px; height: 36px; border-radius: 50%;
+            font-size: 18px; line-height: 1; cursor: pointer;
+            color: var(--text-primary);
+        }
+        .modal-close:hover { background: var(--btn-hover); }
+        .modal-title { font-size: 26px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+        .modal-meta { font-size: 13px; color: var(--text-secondary); margin: 0 0 20px; }
+        .modal-description { font-size: 16px; line-height: 1.55; color: #333; margin: 0; overflow-wrap: anywhere; word-break: break-word; }
+        .modal-section { margin-top: 24px; }
+        .modal-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); margin: 0 0 10px; font-weight: 600; }
+        .modal-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .modal-tag { background: var(--btn-bg); color: #1d1d1f; border-radius: 8px; padding: 4px 10px; font-size: 13px; font-weight: 500; }
+        .modal-skill { padding: 12px 0; border-top: 1px solid #e5e5ea; }
+        .modal-skill:first-child { border-top: none; padding-top: 0; }
+        .modal-skill-name { font-weight: 600; margin: 0 0 4px; font-size: 15px; }
+        .modal-skill-desc { font-size: 14px; color: #515154; margin: 0; line-height: 1.45; }
+        .modal-link { display: inline-block; margin-top: 4px; color: var(--accent-color); font-weight: 600; font-size: 13px; text-decoration: none; }
+        .modal-link:hover { text-decoration: underline; }
+        /* Capability badges (provenance / reproducibility / validation) */
+        .modal-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+        .modal-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            border-radius: 999px; padding: 5px 12px;
+            font-size: 13px; font-weight: 600;
+            border: 1px solid transparent;
+            cursor: help;
+        }
+        .modal-badge.yes { background: #e8f7ec; color: #1f7a3a; border-color: #c9ebd2; }
+        .modal-badge.no  { background: #fdecec; color: #b3261e; border-color: #f4caca; }
+        .modal-badge .modal-badge-mark { font-size: 14px; line-height: 1; }
+        /* Skill constraint sub-rows */
+        .modal-skill-meta { margin: 6px 0 0; font-size: 13px; color: #515154; line-height: 1.45; }
+        .modal-skill-meta span { font-weight: 600; color: #1d1d1f; }
+        .modal-skill-other { margin: 4px 0 0 16px; padding: 0; font-size: 13px; color: #515154; }
+        /* Operation / ExecuteTask summary */
+        .modal-op-name { font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+        .modal-op-desc { font-size: 14px; color: #515154; margin: 0 0 8px; line-height: 1.45; }
+        .modal-op-row { font-size: 13px; color: #515154; margin: 4px 0; line-height: 1.45; overflow-wrap: anywhere; }
+        .modal-op-row span { font-weight: 600; color: #1d1d1f; }
+        .modal-op-row code { background: var(--btn-bg); padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+        .modal-facts {
+            display: grid;
+            grid-template-columns: minmax(130px, max-content) minmax(0, 1fr);
+            gap: 4px 14px;
+            font-size: 13px;
+            line-height: 1.28;
+            align-items: start;
+        }
+        .modal-facts dt {
+            color: #1d1d1f;
+            font-weight: 600;
+        }
+        .modal-facts dd {
+            color: #515154;
+            margin: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .modal-facts code {
+            background: var(--btn-bg);
+            border-radius: 6px;
+            padding: 1px 6px;
+            font-size: 12px;
+        }
+        .modal-facts .modal-link {
+            margin-top: 0;
+            line-height: 1.28;
+        }
+        /* Footer meta (agent_id / base_url / default_model) */
+        .modal-footer-meta {
+            margin-top: 24px; padding-top: 16px;
+            border-top: 1px solid #e5e5ea;
+            font-size: 12px; color: var(--text-secondary);
+            display: grid; grid-template-columns: max-content 1fr;
+            row-gap: 6px; column-gap: 12px;
+            overflow-wrap: anywhere; word-break: break-word;
+        }
+        .modal-footer-meta dt { font-weight: 600; color: #1d1d1f; }
+        .modal-footer-meta dd { margin: 0; }
+        .modal-footer-meta a { color: var(--accent-color); text-decoration: none; }
+        .modal-footer-meta a:hover { text-decoration: underline; }
+
+        /* Action bar (search + register) */
+        .action-bar {
+            max-width: 1200px;
+            margin: 0 auto 24px;
+            padding: 0 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1 1 240px;
+            max-width: 420px;
+            padding: 10px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 14px;
+            font-size: 15px;
+            background: #fff;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0,122,255,0.15);
+        }
+        .primary-btn {
+            background: var(--primary-action);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 18px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(37,107,127,0.16);
+            transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+        }
+        .primary-btn:hover {
+            background: var(--primary-action-hover);
+            box-shadow: 0 10px 22px rgba(31,90,107,0.22);
+        }
+        .primary-btn:active { transform: translateY(1px); }
+        .primary-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .view-toggle {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px;
+            border: 1px solid #d2d2d7;
+            border-radius: 14px;
+            background: #fff;
+            gap: 2px;
+        }
+        .view-toggle button {
+            border: none;
+            border-radius: 11px;
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .view-toggle button.active {
+            background: rgba(0,122,255,0.1);
+            color: var(--accent-color);
+        }
+        .pagination-bar {
+            max-width: 1200px;
+            margin: -36px auto 48px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .pagination-bar label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pagination-bar select {
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-primary);
+            padding: 7px 10px;
+            font-size: 14px;
+        }
+        .page-btn {
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-primary);
+            padding: 7px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        .page-btn:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+
+        /* Filter bar (query-param checkboxes) */
+        .filter-bar {
+            max-width: 1200px;
+            margin: 0 auto 24px;
+            padding: 0 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .filter-bar .filter-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-right: 2px;
+        }
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            border: 1px solid #d2d2d7;
+            border-radius: 999px;
+            background: #fff;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        .filter-chip:hover { border-color: var(--accent-color); }
+        .filter-chip input { accent-color: var(--accent-color); margin: 0; cursor: pointer; }
+        .filter-chip.active {
+            border-color: var(--accent-color);
+            background: rgba(0,122,255,0.08);
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Search group: input + "search by" select + filter dropdown */
+        .search-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1 1 420px;
+            max-width: 660px;
+        }
+        .search-group .search-input { flex: 1 1 auto; max-width: none; }
+
+        /* Unified search box: [search-by ▾] | input  (one pill) */
+        .search-box {
+            display: flex;
+            align-items: stretch;
+            flex: 1 1 auto;
+            border: 1px solid #d2d2d7;
+            border-radius: 14px;
+            background: #fff;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .search-box:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0,122,255,0.15);
+        }
+        .search-box .field-menu,
+        .search-box .filter-menu-right { display: flex; }
+        .search-box .field-btn,
+        .search-box .filter-btn-right {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        .search-box .field-btn {
+            border-right: 1px solid #e5e5ea;
+            border-radius: 14px 0 0 14px;
+        }
+        .search-box .filter-btn-right {
+            border-left: 1px solid #e5e5ea;
+            border-radius: 0 14px 14px 0;
+        }
+        .search-box .field-btn:hover,
+        .search-box .filter-btn-right:hover { background: var(--btn-bg); }
+        .search-box .field-btn.active,
+        .search-box .filter-btn-right.active {
+            background: rgba(0,122,255,0.08);
+            color: var(--accent-color);
+        }
+        .search-box .search-input {
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .search-box .search-input:focus { border: none; box-shadow: none; }
+        /* Each dropdown anchors to its own button. */
+        #field-panel { left: 0; right: auto; }
+        #filter-panel { right: 0; left: auto; }
+
+        .filter-menu { position: relative; }
+        .filter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 14px;
+            background: #fff;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        .filter-btn:hover { border-color: var(--accent-color); }
+        .filter-btn.active { border-color: var(--accent-color); background: rgba(0,122,255,0.08); color: var(--accent-color); }
+        .filter-btn .chev { transition: transform 0.15s ease; font-size: 11px; }
+        .filter-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+        .filter-badge {
+            display: inline-block;
+            min-width: 16px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: var(--accent-color);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 16px;
+        }
+        .filter-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 50;
+            min-width: 230px;
+            background: #fff;
+            border: 1px solid #e5e5ea;
+            border-radius: 14px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+            padding: 12px;
+        }
+        .filter-panel[hidden] { display: none; }
+        .filter-panel-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin: 2px 0 10px;
+        }
+        .filter-opt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 4px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .filter-opt input { accent-color: var(--accent-color); cursor: pointer; }
+        .filter-clear {
+            margin-top: 8px;
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 10px;
+            background: var(--btn-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .filter-clear:hover { background: var(--btn-hover); }
+        .filter-clear:disabled { opacity: 0.5; cursor: default; }
+
+        /* "Search by" options inside the dropdown */
+        .field-opt {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            margin: 1px 0;
+            border: none;
+            border-radius: 8px;
+            background: none;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+        }
+        .field-opt:hover { background: var(--btn-bg); }
+        .field-opt.active { color: var(--accent-color); font-weight: 600; }
+        .field-opt.active::after { content: "✓"; font-weight: 700; margin-left: 10px; }
+
+        /* Registration modal form */
+        .form-row { margin: 0 0 14px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0 0 6px; }
+        .form-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+        .form-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(0,122,255,0.15); }
+        .form-hint { font-size: 12px; color: var(--text-secondary); margin: 4px 0 0; }
+        .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .secondary-btn {
+            background: var(--btn-bg); color: var(--text-primary);
+            border: none; border-radius: 12px;
+            padding: 10px 18px; font-size: 15px; font-weight: 600;
+            cursor: pointer;
+        }
+        .secondary-btn:hover { background: var(--btn-hover); }
+        .form-status {
+            margin-top: 12px;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            display: none;
+        }
+        .form-status.info    { display: block; background: #eaf3ff; color: #0c5fc7; }
+        .form-status.success { display: block; background: #e6f6ec; color: #1f7a3f; }
+        .form-status.error   { display: block; background: #fdecec; color: #b3261e; }
+
+        .remote-agent-list {
+            margin-top: 14px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        .remote-agent-list-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            font-size: 13px; color: var(--text-secondary);
+            background: var(--card-bg);
+            position: sticky; top: 0; z-index: 1;
+        }
+        .remote-agent-list-header .select-all { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .remote-agent-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .remote-agent-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 14px;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            background: var(--card-bg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+        }
+        .remote-agent-item:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,122,255,0.10);
+        }
+        .remote-agent-item:has(input[type="checkbox"]:checked) {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.15);
+        }
+        .remote-agent-item input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; }
+        .remote-agent-item .info { flex: 1; min-width: 0; }
+        .remote-agent-item .title-row {
+            display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .remote-agent-item .agent-name {
+            font-weight: 600; color: var(--text-primary); font-size: 14px;
+            word-break: break-word;
+        }
+        .remote-agent-item .agent-version {
+            font-size: 11px; color: var(--text-secondary);
+            background: var(--btn-bg); padding: 2px 6px; border-radius: 6px;
+        }
+        .remote-agent-item .agent-desc {
+            margin: 0; font-size: 12.5px; color: var(--text-secondary);
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 20px;
+            font-size: 15px;
+        }
+    </style>
+    <script>
+        (function routeGasRequest() {
+            var currentJsonFilename = "gas-response.json";
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+            }
+
+            var jsonNodeCounter = 0;
+
+            function getIndent(depth) {
+                return new Array(depth + 1).join("  ");
+            }
+
+            function formatKey(key) {
+                return typeof key === "string" ? "<span class=\"json-key\">\"" + escapeHtml(key) + "\"</span>: " : "";
+            }
+
+            function formatPrimitive(value) {
+                if (value === null) {
+                    return "<span class=\"json-type-null\">null</span>";
+                }
+                if (typeof value === "string") {
+                    return "<span class=\"json-type-string\">\"" + escapeHtml(value) + "\"</span>";
+                }
+                if (typeof value === "number") {
+                    return "<span class=\"json-type-number\">" + String(value) + "</span>";
+                }
+                if (typeof value === "boolean") {
+                    return "<span class=\"json-type-boolean\">" + String(value) + "</span>";
+                }
+                return "<span class=\"json-type-undefined\">undefined</span>";
+            }
+
+            function renderJsonNode(value, key, depth, isLast, isRoot) {
+                var container = document.createElement("div");
+                var keyPrefix = formatKey(key);
+                var comma = isLast ? "" : ",";
+                var indent = getIndent(depth);
+
+                if (value === null || typeof value !== "object") {
+                    var primitiveLine = document.createElement("div");
+                    primitiveLine.className = "json-line";
+                    primitiveLine.innerHTML =
+                        escapeHtml(indent) +
+                        "<span class=\"json-toggle-slot\"></span>" +
+                        keyPrefix +
+                        formatPrimitive(value) +
+                        comma;
+                    container.appendChild(primitiveLine);
+                    return container;
+                }
+
+                var isArray = Array.isArray(value);
+                var keys = isArray ? value.map(function(_, i) { return i; }) : Object.keys(value);
+                var openChar = isArray ? "[" : "{";
+                var closeChar = isArray ? "]" : "}";
+
+                if (keys.length === 0) {
+                    var emptyLine = document.createElement("div");
+                    emptyLine.className = "json-line";
+                    emptyLine.innerHTML =
+                        escapeHtml(indent) +
+                        "<span class=\"json-toggle-slot\"></span>" +
+                        keyPrefix +
+                        openChar +
+                        closeChar +
+                        comma;
+                    container.appendChild(emptyLine);
+                    return container;
+                }
+
+                var nodeId = "json-node-" + (jsonNodeCounter++);
+                var headerLine = document.createElement("div");
+                headerLine.className = "json-line";
+                headerLine.innerHTML =
+                    escapeHtml(indent) +
+                    "<span class=\"json-toggle-slot\"><button type=\"button\" class=\"json-toggle\" data-target=\"" + nodeId + "\" aria-expanded=\"true\">▼</button></span>" +
+                    keyPrefix +
+                    openChar;
+                container.appendChild(headerLine);
+
+                var children = document.createElement("div");
+                children.id = nodeId;
+                children.className = "json-children";
+                keys.forEach(function(childKey, index) {
+                    children.appendChild(
+                        renderJsonNode(value[childKey], isArray ? null : String(childKey), depth + 1, index === keys.length - 1, false)
+                    );
+                });
+                container.appendChild(children);
+
+                var closingLine = document.createElement("div");
+                closingLine.className = "json-line";
+                closingLine.innerHTML = escapeHtml(indent) + "<span class=\"json-toggle-slot\"></span>" + closeChar + comma;
+                container.appendChild(closingLine);
+
+                if (isRoot) {
+                    container.classList.add("json-root");
+                }
+
+                return container;
+            }
+
+            function renderJson(payload) {
+                document.title = "GAS API Response";
+                document.documentElement.innerHTML =
+                    "<head><meta charset=\"UTF-8\"><title>GAS API Response</title></head>" +
+                    "<body>" +
+                    "<div class=\"json-page\">" +
+                    "<div class=\"json-toolbar\">" +
+                    "<button id=\"download-json\" type=\"button\">Download JSON</button>" +
+                    "</div>" +
+                    "<div id=\"json-viewer\" class=\"json-viewer\"></div>" +
+                    "</div>" +
+                    "</body>";
+
+                var style = document.createElement("style");
+                style.textContent = [
+                    "body{margin:0;padding:16px;background:#ffffff;color:#111111;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}",
+                    ".json-page{max-width:1200px;margin:0 auto;}",
+                    ".json-toolbar{display:flex;justify-content:flex-end;margin-bottom:12px;}",
+                    "#download-json{border:1px solid #d2d2d7;background:#f5f5f7;color:#1d1d1f;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;}",
+                    "#download-json:hover{background:#ebebf0;}",
+                    ".json-viewer{border:1px solid #e5e5ea;border-radius:10px;padding:12px;line-height:1.5;}",
+                    ".json-line{padding:1px 0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}",
+                    ".json-children{margin:0;}",
+                    ".json-toggle-slot{display:inline-block;width:14px;text-align:left;}",
+                    ".json-toggle{border:none;background:transparent;color:#007aff;cursor:pointer;padding:0;font-size:11px;line-height:1;vertical-align:middle;width:14px;text-align:left;}",
+                    ".json-key{color:#1d1d1f;}",
+                    ".json-meta{color:#007aff;}",
+                    ".json-type-string{color:#0a7f42;}",
+                    ".json-type-number{color:#b25000;}",
+                    ".json-type-boolean{color:#7b2cbf;}",
+                    ".json-type-null{color:#8e8e93;}",
+                    ".json-type-undefined{color:#8e8e93;}"
+                ].join("");
+                document.head.appendChild(style);
+
+                var viewer = document.getElementById("json-viewer");
+                viewer.appendChild(renderJsonNode(payload, null, 0, true, true));
+
+                viewer.addEventListener("click", function(event) {
+                    var toggle = event.target;
+                    if (!toggle.classList.contains("json-toggle")) {
+                        return;
+                    }
+                    var targetId = toggle.getAttribute("data-target");
+                    var target = document.getElementById(targetId);
+                    if (!target) {
+                        return;
+                    }
+                    var isHidden = target.style.display === "none";
+                    target.style.display = isHidden ? "block" : "none";
+                    toggle.textContent = isHidden ? "▼" : "▶";
+                    toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+                });
+
+                document.getElementById("download-json").addEventListener("click", function() {
+                    var jsonText = JSON.stringify(payload, null, 2);
+                    var blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+                    var url = URL.createObjectURL(blob);
+                    var link = document.createElement("a");
+                    link.href = url;
+                    link.download = currentJsonFilename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                });
+            }
+
+            function renderErrorJson(errorMessage, details) {
+                var payload = {
+                    ok: false,
+                    error: errorMessage
+                };
+
+                if (details) {
+                    payload.details = details;
+                }
+
+                renderJson(payload);
+            }
+
+            function respondWithJsonFile(filePath) {
+                var matchedName = String(filePath || "").match(/[^\\/]+$/);
+                currentJsonFilename = matchedName ? matchedName[0] : "gas-response.json";
+                fetch(filePath, { cache: "no-store" })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error("HTTP " + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        renderJson(data);
+                    })
+                    .catch(function(err) {
+                        renderErrorJson("Requested JSON resource is unavailable.", String(err && err.message ? err.message : err));
+                    });
+            }
+
+            var params = new URLSearchParams(window.location.search);
+            var request = (params.get("REQUEST") || "").toLowerCase();
+            var agent = (params.get("name") || params.get("agent") || "").toLowerCase();
+            var service = (params.get("SERVICE") || "").toUpperCase();
+
+            // Keep normal page rendering when URL is not API-style.
+            if (!request) {
+                return;
+            }
+
+            if (service && service !== "GAS") {
+                renderErrorJson("Invalid SERVICE parameter.", "Expected SERVICE=GAS.");
+                return;
+            }
+
+            if (request === "getcapabilities") {
+                respondWithJsonFile("ServiceCapabilities/gas_capabilities.json");
+                return;
+            }
+
+            if (request === "describeagent" && agent) {
+                respondWithJsonFile("ServiceCapabilities/" + agent + ".json");
+                return;
+            }
+
+            if (request === "describeagent" && !agent) {
+                renderErrorJson("Missing required agent parameter.", "Provide ?agent=<agent_name> for DescribeAgent.");
+                return;
+            }
+
+            renderErrorJson("Invalid REQUEST parameter.", "Supported values: GetCapabilities, DescribeAgent.");
+        })();
+    </script>
+</head>
+<body>
+
+    <header>
+        <a class="project-link" href="https://github.com/GIBD2015/geospatial-agentic-services" target="_blank" rel="noopener" aria-label="Open GAS Project on GitHub">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.62 7.62 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+            </svg>
+            GAS Project
+        </a>
+        <h1>GAS Store</h1>
+        <h2>Published Geospatial Agentic Services in the GAS Registry</h2>
+    </header>
+
+    <div class="action-bar">
+        <div class="search-group">
+            <div class="search-box">
+                <div class="filter-menu field-menu">
+                    <button id="field-toggle" class="filter-btn field-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Search by">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+                        <span class="chev" aria-hidden="true">▾</span>
+                    </button>
+                    <div id="field-panel" class="filter-panel" hidden role="menu">
+                        <p class="filter-panel-title">Search by</p>
+                        <button type="button" class="field-opt active" data-field="" data-label="">All fields</button>
+                        <button type="button" class="field-opt" data-field="name" data-label="Name">Name</button>
+                        <button type="button" class="field-opt" data-field="keywords" data-label="Keywords">Keywords</button>
+                        <button type="button" class="field-opt" data-field="skills" data-label="Skills">Skills</button>
+                        <!-- <button type="button" class="field-opt" data-field="description" data-label="Description">Description</button> -->
+                        <!-- <button type="button" class="field-opt" data-field="operations" data-label="Operations">Operations</button> -->
+                        <!-- <button type="button" class="field-opt" data-field="extensions" data-label="Extensions">Extensions</button> -->
+                        <!-- <button type="button" class="field-opt" data-field="provider" data-label="Provider">Provider</button> -->
+                    </div>
+                </div>
+                <input id="search-input" class="search-input" type="search" placeholder="Search geospatial agentic services…" autocomplete="off">
+                <!-- Filter dropdown temporarily disabled.
+                <div class="filter-menu filter-menu-right">
+                    <button id="filter-toggle" class="filter-btn filter-btn-right" type="button" aria-haspopup="true" aria-expanded="false" title="Filters">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        <span id="filter-badge" class="filter-badge" hidden>0</span>
+                        <span class="chev" aria-hidden="true">▾</span>
+                    </button>
+                    <div id="filter-panel" class="filter-panel" hidden role="menu">
+                        <p class="filter-panel-title">Filter by</p>
+                        <label class="filter-opt"><input type="checkbox" data-filter="provenance_supported"> Provenance supported</label>
+                        <label class="filter-opt"><input type="checkbox" data-filter="reproducibility_supported"> Reproducibility supported</label>
+                        <label class="filter-opt"><input type="checkbox" data-filter="validation_supported"> Validation supported</label>
+                        <button type="button" id="filter-clear" class="filter-clear" disabled>Clear filters</button>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+        <button id="register-btn" class="primary-btn" type="button">Register GAS Server</button>
+        <div class="view-toggle" aria-label="Display mode">
+            <button id="card-view-btn" class="active" type="button" aria-pressed="true">Card</button>
+            <button id="list-view-btn" type="button" aria-pressed="false">List</button>
+        </div>
+    </div>
+    <main class="container" id="agent-cards">
+        <p id="agent-cards-status" style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary);">Loading agents…</p>
+    </main>
+
+    <div class="pagination-bar" aria-label="Pagination controls">
+        <label>
+            Items per page
+            <select id="page-size-select">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+            </select>
+        </label>
+        <button id="prev-page-btn" class="page-btn" type="button">Previous</button>
+        <span id="page-status">Page 1 of 1</span>
+        <button id="next-page-btn" class="page-btn" type="button">Next</button>
+    </div>
+
+    <script>
+        (function loadAgentCards() {
+            // Skip if the page is rendering an API JSON response.
+            var params = new URLSearchParams(window.location.search);
+            if (params.get("REQUEST")) {
+                return;
+            }
+
+            // ---- API endpoint configuration --------------------------------
+            // The Flask backend (app.py) can live on a different origin than
+            // this page — e.g. page on GitHub Pages, API on PythonAnywhere.
+            // Leave "" for same-origin (local `python app.py` keeps working).
+            // Override WITHOUT editing the file via:
+            //   • ?api=https://yourname.pythonanywhere.com  in the page URL
+            //   • window.GAS_API_BASE set before this script runs
+            // Or just set DEFAULT_API_BASE below once the server URL is known.
+            var DEFAULT_API_BASE = "";  // e.g. "https://yourname.pythonanywhere.com"
+            var API_BASE = (function () {
+                var qp = new URLSearchParams(window.location.search).get("api");
+                return String(qp || window.GAS_API_BASE || DEFAULT_API_BASE || "")
+                    .replace(/\/+$/, "");
+            }());
+            // Turn a relative "/api/..." path (or a relative describeUrl from
+            // the API) into an absolute URL against API_BASE. Absolute URLs
+            // and the same-origin default are returned unchanged.
+            function apiUrl(pathOrUrl) {
+                var s = String(pathOrUrl == null ? "" : pathOrUrl);
+                if (/^https?:\/\//i.test(s)) return s;
+                if (!API_BASE) return s;
+                return API_BASE + (s.charAt(0) === "/" ? s : "/" + s);
+            }
+
+            var CAPABILITIES_URL = apiUrl("/registry/api/gas?SERVICE=GAS&VERSION=1.0.0&REQUEST=GetCapabilities");
+
+            // Presentation-only mapping for icon styles + emoji, keyed by agent slug.
+            // New agents fall back to a default style.
+            var ICON_MAP = {
+                vector_analysis_agent: { cls: "icon-vector",     emoji: "📐" }, // 📐
+                raster_agent:          { cls: "icon-raster",     emoji: "🏔️" }, // 🏔️
+                pasda_agent:           { cls: "icon-pasda",      emoji: "🔍" }, // 🔍
+                mapping_agent:         { cls: "icon-mapping",    emoji: "📍" }, // 📍
+                map_projection_agent:  { cls: "icon-projection", emoji: "🌐" }, // 🌐
+                geospatial_data_retrieval_agent:  { cls: "icon-retriever",  emoji: "📥" }, // 📥
+                geospatial_data_inspection_agent: { cls: "icon-inspection", emoji: "🔎" }, // 🔎
+                web_mapping_app_agent:            { cls: "icon-webmap",     emoji: "🗺️" }, // 🗺️
+                spatial_statistics_agent:         { cls: "icon-stats",      emoji: "📊" }  // 📊
+            };
+            var DEFAULT_ICON = { cls: "icon-vector", emoji: "✨" };
+
+            function escapeHtml(value) {
+                return String(value == null ? "" : value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            //  Convert e.g "vector_analysis_agent" -> "VectorAnalysisAgent"
+            function toDisplayTitle(slug) {
+                return String(slug || "")
+                    .split("_")
+                    .filter(Boolean)
+                    .map(function(p) { return p.charAt(0).toUpperCase() + p.slice(1); })
+                    .join("");
+            }
+
+            function fetchJson(url) {
+                return fetch(url, { cache: "no-store" }).then(function(r) {
+                    if (!r.ok) { throw new Error("HTTP " + r.status + " for " + url); }
+                    return r.json();
+                });
+            }
+
+            // ---- Modal (one shared instance) ----
+            var modalOverlay = document.createElement("div");
+            modalOverlay.className = "modal-overlay";
+            var modalContent = document.createElement("div");
+            modalContent.className = "modal-content";
+            modalOverlay.appendChild(modalContent);
+            document.body.appendChild(modalOverlay);
+
+            function closeModal() {
+                modalOverlay.classList.remove("open");
+                document.body.style.overflow = "";
+            }
+            modalOverlay.addEventListener("click", function(e) {
+                if (e.target === modalOverlay) closeModal();
+            });
+            document.addEventListener("keydown", function(e) {
+                if (e.key === "Escape") closeModal();
+            });
+
+            function tagsHtml(values) {
+                return values.map(function(t) {
+                    return '<span class="modal-tag">' + escapeHtml(t) + '</span>';
+                }).join("");
+            }
+
+            // Loosely truthy: handles "true"/"false" strings and real booleans.
+            function isYes(v) {
+                if (v === true) return true;
+                if (typeof v === "string") return v.toLowerCase() === "true";
+                return false;
+            }
+
+            function capabilityBadgesHtml(pr) {
+                if (!pr || typeof pr !== "object") return "";
+                var items = [
+                    { key: "provenance",      label: "Provenance" },
+                    { key: "reproducibility", label: "Reproducibility" },
+                    { key: "validation",      label: "Validation" }
+                ];
+                var any = items.some(function(it) { return pr[it.key]; });
+                if (!any) return "";
+                var badges = items.map(function(it) {
+                    var info = pr[it.key];
+                    if (!info) return "";
+                    var yes = isYes(info.supported);
+                    var tip = info.description || (yes ? "Supported" : "Not supported");
+                    return '<span class="modal-badge ' + (yes ? "yes" : "no") + '" title="' + escapeHtml(tip) + '">' +
+                        '<span class="modal-badge-mark">' + (yes ? "&#10003;" : "&#10005;") + '</span>' +
+                        escapeHtml(it.label) +
+                        '</span>';
+                }).join("");
+                return '<div class="modal-section"><h4>Capabilities</h4>' +
+                    '<div class="modal-badges">' + badges + '</div></div>';
+            }
+
+            function skillConstraintsHtml(c) {
+                if (!c || typeof c !== "object") return "";
+                var html = "";
+                if (c.spatial)  html += '<p class="modal-skill-meta"><span>Spatial:</span> '  + escapeHtml(c.spatial)  + '</p>';
+                if (c.temporal) html += '<p class="modal-skill-meta"><span>Temporal:</span> ' + escapeHtml(c.temporal) + '</p>';
+                if (Array.isArray(c.other) && c.other.length) {
+                    html += '<p class="modal-skill-meta"><span>Other:</span></p><ul class="modal-skill-other">';
+                    c.other.forEach(function(line) {
+                        html += '<li>' + escapeHtml(line) + '</li>';
+                    });
+                    html += '</ul>';
+                }
+                return html;
+            }
+
+            function valueListHtml(value) {
+                if (Array.isArray(value)) {
+                    return value.length ? value.map(function(v) {
+                        return '<code>' + escapeHtml(displayValue(v)) + '</code>';
+                    }).join(" ") : "";
+                }
+                if (value && typeof value === "object") {
+                    return escapeHtml(displayValue(value));
+                }
+                return value === undefined || value === null || value === "" ? "" : escapeHtml(displayValue(value));
+            }
+
+            function displayValue(value) {
+                if (value === true) return "Yes";
+                if (value === false) return "No";
+                if (value === undefined || value === null) return "";
+                if (Array.isArray(value)) return value.map(displayValue).filter(Boolean).join(", ");
+                if (value && typeof value === "object") {
+                    if (value.description) return value.description;
+                    if (value.supported !== undefined && value.description) return (isYes(value.supported) ? "Supported. " : "Not supported. ") + value.description;
+                    if (value.supported !== undefined) return isYes(value.supported) ? "Supported" : "Not supported";
+                    return JSON.stringify(value);
+                }
+                return String(value);
+            }
+
+            function factsHtml(title, rows) {
+                var filtered = rows.filter(function(row) {
+                    return row && row[1] !== undefined && row[1] !== null && row[1] !== "" &&
+                        !(Array.isArray(row[1]) && row[1].length === 0);
+                });
+                if (!filtered.length) return "";
+                var body = filtered.map(function(row) {
+                    return '<dt>' + escapeHtml(row[0]) + '</dt><dd>' + valueListHtml(row[1]) + '</dd>';
+                }).join("");
+                return '<div class="modal-section"><h4>' + escapeHtml(title) + '</h4>' +
+                    '<dl class="modal-facts">' + body + '</dl></div>';
+            }
+
+            function dataSupportHtml(dataSupport) {
+                if (!dataSupport || typeof dataSupport !== "object") return "";
+                return factsHtml("Geospatial data support", [
+                    ["Data types", dataSupport.supported_data_types],
+                    ["Formats", dataSupport.supported_formats],
+                    ["CRS", dataSupport.supported_crs || dataSupport.coordinate_reference_systems],
+                    ["Geometry types", dataSupport.supported_geometry_types || dataSupport.geometry_types],
+                    ["Raster types", dataSupport.supported_raster_types || dataSupport.raster_types],
+                    ["Spatial extent", dataSupport.spatial_extent || dataSupport.extent],
+                    ["Scale / resolution", dataSupport.scale_or_resolution || dataSupport.resolution],
+                    ["Input datasets required", dataSupport.requires_input_datasets]
+                ]);
+            }
+
+            function governanceHtml(governance) {
+                if (!governance || typeof governance !== "object") return "";
+                return factsHtml("Governance and use constraints", [
+                    ["Access control", governance.access || governance.access_control],
+                    ["Operation policy", governance.operation_policy],
+                    ["Review policy", governance.review_policy],
+                    ["Policy notes", governance.policy_notes],
+                    ["License", governance.license || governance.licensing],
+                    ["Privacy", governance.privacy],
+                    ["Human review", governance.human_review],
+                    ["Permitted use", governance.permitted_use || governance.permitted_uses],
+                    ["Data retention", governance.data_retention || governance.retention]
+                ]);
+            }
+
+            function conformanceHtml(conformance) {
+                if (!conformance || typeof conformance !== "object") return "";
+                return factsHtml("GAS conformance", [
+                    ["GAS version", conformance.gas_version],
+                    ["Interface profile", conformance.interface_profile || conformance.profile],
+                    ["Response schema", conformance.response_schema],
+                    ["Request schema", conformance.request_schema],
+                    ["Task modes", conformance.task_modes || conformance.modes]
+                ]);
+            }
+
+            function extensionsHtml(extensions) {
+                if (!extensions || typeof extensions !== "object") return "";
+                var rows = [["Description", extensions.description]];
+                Object.keys(extensions).forEach(function(key) {
+                    if (key === "description") return;
+                    var value = extensions[key];
+                    if (Array.isArray(value)) {
+                        rows.push([key.replace(/_/g, " "), value.slice(0, 6).map(function(item) {
+                            if (typeof item === "string") return item;
+                            return item.name || item.id || item.title || JSON.stringify(item);
+                        })]);
+                    } else if (value && typeof value === "object") {
+                        rows.push([key.replace(/_/g, " "), JSON.stringify(value)]);
+                    } else {
+                        rows.push([key.replace(/_/g, " "), value]);
+                    }
+                });
+                return factsHtml("Agent-specific extensions", rows);
+            }
+
+            function provenanceDetailsHtml(pr) {
+                if (!pr || typeof pr !== "object") return "";
+                return factsHtml("Provenance and reproducibility details", [
+                    ["Provenance", pr.provenance],
+                    ["Reproducibility", pr.reproducibility],
+                    ["Validation", pr.validation]
+                ]);
+            }
+
+            function providerHtml(provider, contact) {
+                provider = provider || {};
+                contact = contact || {};
+                if (!provider.name && !provider.website && !contact.name && !contact.email) return "";
+                var providerName = provider.website
+                    ? '<a class="modal-link" href="' + escapeHtml(provider.website) + '" target="_blank" rel="noopener">' + escapeHtml(provider.name || provider.website) + '</a>'
+                    : escapeHtml(provider.name || "");
+                var rows = [];
+                if (providerName) rows.push(["Provider", providerName]);
+                if (contact.name) rows.push(["Contact", escapeHtml(contact.name)]);
+                if (contact.email) {
+                    rows.push([
+                        "Email",
+                        escapeHtml(contact.email)
+                    ]);
+                }
+                var body = rows.map(function(row) {
+                    return '<dt>' + escapeHtml(row[0]) + '</dt><dd>' + row[1] + '</dd>';
+                }).join("");
+                return '<div class="modal-section"><h4>Provider</h4>' +
+                    '<dl class="modal-facts">' + body + '</dl></div>';
+            }
+
+            function executeHtml(executeTask, legacyOps) {
+                // New schema: single execute_task object. Legacy: operations[].
+                var op = executeTask;
+                if (!op && Array.isArray(legacyOps) && legacyOps.length) op = legacyOps[0];
+                if (!op || typeof op !== "object") return "";
+
+                var name = op.name || op.operation_id || "Operation";
+                var desc = op.description || "";
+                var rows = [];
+
+                if (Array.isArray(op.modes) && op.modes.length) {
+                    rows.push('<span>Modes:</span> ' + op.modes.map(function(m) {
+                        return '<code>' + escapeHtml(m) + '</code>';
+                    }).join(" "));
+                }
+
+                // Required inputs from new schema's task/inputs blocks.
+                var required = [];
+                if (op.task && typeof op.task === "object") {
+                    Object.keys(op.task).forEach(function(k) {
+                        if (op.task[k] && op.task[k].required) required.push(k);
+                    });
+                }
+                if (op.inputs && typeof op.inputs === "object") {
+                    Object.keys(op.inputs).forEach(function(k) {
+                        if (op.inputs[k] && op.inputs[k].required) required.push(k);
+                    });
+                }
+                if (required.length) {
+                    rows.push('<span>Required inputs:</span> ' + required.map(function(r) {
+                        return '<code>' + escapeHtml(r) + '</code>';
+                    }).join(" "));
+                }
+
+                // Output artifacts.
+                if (op.outputs && Array.isArray(op.outputs.primary_artifacts)) {
+                    var arts = op.outputs.primary_artifacts.map(function(a) {
+                        var fmt = Array.isArray(a.formats) ? " (" + a.formats.join("/") + ")" : "";
+                        return escapeHtml((a.type || "") + fmt);
+                    }).filter(Boolean);
+                    if (arts.length) rows.push('<span>Artifacts:</span> ' + arts.join(", "));
+                }
+
+                // Credentials (one_of).
+                if (op.credentials && Array.isArray(op.credentials.one_of) && op.credentials.one_of.length) {
+                    rows.push('<span>Credentials:</span> one of ' + op.credentials.one_of.map(function(c) {
+                        return '<code>' + escapeHtml(c) + '</code>';
+                    }).join(" or "));
+                }
+
+                var html = '<div class="modal-section"><h4>How to invoke</h4>' +
+                    '<p class="modal-op-name">' + escapeHtml(name) + '</p>';
+                if (desc) html += '<p class="modal-op-desc">' + escapeHtml(desc) + '</p>';
+                rows.forEach(function(r) { html += '<p class="modal-op-row">' + r + '</p>'; });
+                html += '</div>';
+                return html;
+            }
+
+            function footerMetaHtml(profile, agentEntry) {
+                var items = [];
+                var agentId = profile.agent_id || agentEntry.name;
+                var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                if (agentId)             items.push(["Agent ID",      '<code>' + escapeHtml(agentId) + '</code>']);
+                if (sourceServer)        items.push(["GAS Server",     '<a href="' + escapeHtml(sourceServer) + '" target="_blank" rel="noopener">' + escapeHtml(sourceServer) + '</a>']);
+                if (profile.base_url)    items.push(["Base URL",      '<a href="' + escapeHtml(profile.base_url) + '" target="_blank" rel="noopener">' + escapeHtml(profile.base_url) + '</a>']);
+                if (profile.default_model) items.push(["Default model", '<code>' + escapeHtml(profile.default_model) + '</code>']);
+                if (!items.length) return "";
+                var rows = items.map(function(p) {
+                    return '<dt>' + escapeHtml(p[0]) + '</dt><dd>' + p[1] + '</dd>';
+                }).join("");
+                return '<dl class="modal-footer-meta">' + rows + '</dl>';
+            }
+
+            function openModal(agentEntry, detail) {
+                var profile = (detail && detail.profile) || {};
+                var slug = profile.agent_id || agentEntry.name || profile.name || "";
+                var title = (profile.name && profile.name !== slug)
+                    ? profile.name
+                    : toDisplayTitle(slug);
+                var version = profile.version || "";
+                var status = profile.status || "";
+                var lastUpdated = profile.last_updated || "";
+                var description = profile.description || "";
+                var provider = profile.provider || {};
+                // New schema: provider.contacts (array). Legacy: provider.contact (object).
+                var contact = (Array.isArray(provider.contacts) && provider.contacts.length)
+                    ? (provider.contacts[0] || {})
+                    : (provider.contact || {});
+
+                var dataSupport = (detail && detail.data_support) || {};
+                var formats = dataSupport.supported_formats || [];
+                var dataTypes = dataSupport.supported_data_types || [];
+                var governance = (detail && detail.governance) || {};
+                var conformance = (detail && detail.conformance) || {};
+                var extensions = (detail && detail.extensions) || {};
+
+                var keywords = (detail && detail.keywords) || [];
+                var skills = (detail && detail.skills) || [];
+                var executeTask = (detail && detail.execute_task) || null;
+                var legacyOps = (detail && detail.operations) || [];
+                var pr = (detail && detail.provenance_and_reproducibility) || {};
+
+                var metaParts = [];
+                if (version) metaParts.push("Version " + escapeHtml(version));
+                if (status) metaParts.push(escapeHtml(status));
+                if (lastUpdated) metaParts.push("Updated " + escapeHtml(lastUpdated));
+
+                var html =
+                    '<button class="modal-close" type="button" aria-label="Close">×</button>' +
+                    '<h2 class="modal-title">' + escapeHtml(title) + '</h2>' +
+                    (metaParts.length ? '<p class="modal-meta">' + metaParts.join(" · ") + '</p>' : '') +
+                    '<p class="modal-description">' + escapeHtml(description) + '</p>';
+
+                html += providerHtml(provider, contact);
+                html += footerMetaHtml(profile, agentEntry);
+
+                // Keywords (new top-level field).
+                if (keywords.length) {
+                    html += '<div class="modal-section"><h4>Keywords</h4>' +
+                        '<div class="modal-tags">' + tagsHtml(keywords) + '</div></div>';
+                }
+
+                // Capability badges — provenance / reproducibility / validation.
+                html += capabilityBadgesHtml(pr);
+
+                html += dataSupportHtml(dataSupport);
+
+                if (skills.length) {
+                    html += '<div class="modal-section"><h4>Skills</h4>';
+                    skills.forEach(function(s) {
+                        html += '<div class="modal-skill">' +
+                            '<p class="modal-skill-name">' + escapeHtml(s.name || s.skill_id || s.id || "") + '</p>' +
+                            '<p class="modal-skill-desc">' + escapeHtml(s.description || "") + '</p>' +
+                            skillConstraintsHtml(s.constraints) +
+                            '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                // ExecuteTask (new) or legacy operations[]. Show how to call it.
+                html += executeHtml(executeTask, legacyOps);
+                html += governanceHtml(governance);
+                html += provenanceDetailsHtml(pr);
+                html += conformanceHtml(conformance);
+                html += extensionsHtml(extensions);
+
+                // Footer meta — agent_id, base_url, default_model.
+                if (agentEntry.describeUrl) {
+                    html += '<div class="modal-section">' +
+                        '<a class="modal-link" href="' + escapeHtml(agentEntry.describeUrl) + '" target="_blank" rel="noopener">View full DescribeAgent JSON →</a>' +
+                        '</div>';
+                }
+
+                modalContent.innerHTML = html;
+                modalContent.querySelector(".modal-close").addEventListener("click", closeModal);
+                modalContent.scrollTop = 0;
+                modalOverlay.classList.add("open");
+                document.body.style.overflow = "hidden";
+            }
+            // ---- /Modal ----
+
+            function renderCard(agentEntry, detail) {
+                var profile = (detail && detail.profile) || {};
+                // Slug = stable identifier (snake_case) used for icon lookup.
+                // New profiles expose it as agent_id; legacy used profile.name.
+                var slug = profile.agent_id || agentEntry.name || profile.name || "";
+                var icon = ICON_MAP[slug] || DEFAULT_ICON;
+                // Display title: prefer the human-readable profile.name when it
+                // differs from the slug; otherwise derive one from the slug.
+                var title = (profile.name && profile.name !== slug)
+                    ? profile.name
+                    : toDisplayTitle(slug);
+                var version = (detail && detail.profile && detail.profile.version) || "";
+                var description = (detail && detail.profile && detail.profile.description) || "";
+                var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                var hasDetail = !!(detail && detail.profile);
+
+                var article = document.createElement("article");
+                article.className = "card";
+                article.innerHTML =
+                    '<div class="card-header">' +
+                        '<div class="icon ' + escapeHtml(icon.cls) + '">' + icon.emoji + '</div>' +
+                        '<div class="title-group">' +
+                            '<h3 class="title' + (hasDetail ? ' clickable' : '') + '" title="' + (hasDetail ? 'Click for full details' : '') + '">' + escapeHtml(title) + '</h3>' +
+                            (version ? '<p class="version">Version ' + escapeHtml(version) + '</p>' : '') +
+                            (sourceServer ? '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' + escapeHtml(sourceServer) + '</p>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="divider"></div>' +
+                    '<p class="description">' + escapeHtml(description) + '</p>' +
+                    (hasDetail
+                        ? '<p class="citation"><button class="learn-more-btn" type="button">Learn More</button></p>'
+                        : '');
+
+                if (hasDetail) {
+                    var titleEl = article.querySelector(".title");
+                    titleEl.addEventListener("click", function() { openModal(agentEntry, detail); });
+                    var learnMoreEl = article.querySelector(".learn-more-btn");
+                    if (learnMoreEl) {
+                        learnMoreEl.addEventListener("click", function() { openModal(agentEntry, detail); });
+                    }
+                }
+                return article;
+            }
+
+            function renderErrorCard(agentEntry, err) {
+                var slug = agentEntry.name || "";
+                var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                var article = document.createElement("article");
+                article.className = "card";
+                article.innerHTML =
+                    '<div class="card-header">' +
+                        '<div class="icon ' + escapeHtml((ICON_MAP[slug] || DEFAULT_ICON).cls) + '">!</div>' +
+                        '<div class="title-group">' +
+                            '<h3 class="title">' + escapeHtml(toDisplayTitle(slug)) + '</h3>' +
+                            '<p class="version">Unavailable</p>' +
+                            (sourceServer ? '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' + escapeHtml(sourceServer) + '</p>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="divider"></div>' +
+                    '<p class="description">Could not load agent details: ' + escapeHtml(err && err.message ? err.message : String(err)) + '</p>';
+                return article;
+            }
+
+            var container = document.getElementById("agent-cards");
+            var statusEl = document.getElementById("agent-cards-status");
+            var cardViewBtn = document.getElementById("card-view-btn");
+            var listViewBtn = document.getElementById("list-view-btn");
+            var pageSizeSelect = document.getElementById("page-size-select");
+            var prevPageBtn = document.getElementById("prev-page-btn");
+            var nextPageBtn = document.getElementById("next-page-btn");
+            var pageStatus = document.getElementById("page-status");
+            var currentPage = 1;
+
+            try {
+                pageSizeSelect.value = window.localStorage.getItem("gasRegistryPageSize") || "10";
+            } catch (err) {
+                pageSizeSelect.value = "10";
+            }
+
+            function matchingCards() {
+                return Array.prototype.slice.call(container.querySelectorAll(".card"))
+                    .filter(function(card) { return card.getAttribute("data-filter-match") !== "false"; });
+            }
+
+            function updatePagination() {
+                var allCards = Array.prototype.slice.call(container.querySelectorAll(".card"));
+                var cards = matchingCards();
+                var pageSize = parseInt(pageSizeSelect.value, 10) || 10;
+                var totalPages = Math.max(1, Math.ceil(cards.length / pageSize));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                var start = (currentPage - 1) * pageSize;
+                var end = start + pageSize;
+                var visibleOnPage = 0;
+
+                allCards.forEach(function(card) {
+                    card.style.display = "none";
+                });
+                cards.forEach(function(card, index) {
+                    var show = index >= start && index < end;
+                    card.style.display = show ? "" : "none";
+                    if (show) visibleOnPage++;
+                });
+
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
+                pageStatus.textContent = cards.length
+                    ? ("Page " + currentPage + " of " + totalPages + " · " + cards.length + " agent" + (cards.length === 1 ? "" : "s"))
+                    : "No matching agents";
+                updateEmptyState(cards.length, !!(searchInput && searchInput.value && searchInput.value.trim()));
+                return visibleOnPage;
+            }
+
+            function resetPagination() {
+                currentPage = 1;
+                updatePagination();
+            }
+
+            pageSizeSelect.addEventListener("change", function() {
+                try {
+                    window.localStorage.setItem("gasRegistryPageSize", pageSizeSelect.value);
+                } catch (err) {
+                    // Optional persistence only.
+                }
+                resetPagination();
+            });
+            prevPageBtn.addEventListener("click", function() {
+                currentPage -= 1;
+                updatePagination();
+            });
+            nextPageBtn.addEventListener("click", function() {
+                currentPage += 1;
+                updatePagination();
+            });
+
+            function setDisplayMode(mode) {
+                var isList = mode === "list";
+                container.classList.toggle("list-view", isList);
+                cardViewBtn.classList.toggle("active", !isList);
+                listViewBtn.classList.toggle("active", isList);
+                cardViewBtn.setAttribute("aria-pressed", String(!isList));
+                listViewBtn.setAttribute("aria-pressed", String(isList));
+                try {
+                    window.localStorage.setItem("gasRegistryViewMode", isList ? "list" : "card");
+                } catch (err) {
+                    // Local storage is optional; the view switch still works.
+                }
+            }
+
+            cardViewBtn.addEventListener("click", function() { setDisplayMode("card"); });
+            listViewBtn.addEventListener("click", function() { setDisplayMode("list"); });
+            try {
+                setDisplayMode(window.localStorage.getItem("gasRegistryViewMode") || "card");
+            } catch (err) {
+                setDisplayMode("card");
+            }
+
+            function setStatus(msg) {
+                if (!statusEl.isConnected) {
+                    container.insertBefore(statusEl, container.firstChild);
+                }
+                statusEl.textContent = msg;
+            }
+            function clearStatus() {
+                if (statusEl.isConnected) statusEl.remove();
+            }
+
+            // Build a lowercased haystack of searchable fields for one card.
+            function buildSearchText(entry, detail) {
+                var parts = [];
+                var slug = (detail && detail.profile && detail.profile.name) || (entry && entry.name) || "";
+                if (slug) {
+                    parts.push(slug);                                    // vector_analysis_agent
+                    parts.push(slug.replace(/_/g, " "));                 // vector analysis agent
+                    parts.push(toDisplayTitle(slug));                    // VectorAnalysisAgent (matches what's shown)
+                }
+                if (detail && detail.profile) {
+                    parts.push(detail.profile.description || "");
+                    parts.push(detail.profile.agent_type || "");
+                }
+                if (detail && detail.skills) {
+                    detail.skills.forEach(function(s) {
+                        parts.push(s.name || "");
+                        parts.push(s.description || "");
+                        (s.tags || []).forEach(function(t) { parts.push(t); });
+                        (s.supported_operations || []).forEach(function(op) { parts.push(op); });
+                    });
+                }
+                return parts.join(" ").toLowerCase();
+            }
+
+            // Track slugs already in the grid to avoid duplicates across registrations.
+            var renderedSlugs = Object.create(null);
+
+            function appendAgentsFromCapabilities(caps) {
+                var agents = (caps && caps.agents) || [];
+                var fresh = agents.filter(function(a) {
+                    var slug = a && a.name;
+                    if (!slug || renderedSlugs[slug]) return false;
+                    return true;
+                });
+                if (!fresh.length) {
+                    return Promise.resolve({ added: 0, total: agents.length, duplicates: agents.length });
+                }
+                return Promise.all(fresh.map(function(a) {
+                    return fetchJson(apiUrl(a.detailUrl || a.describeUrl))
+                        .then(function(detail) { return { entry: a, detail: detail, err: null }; })
+                        .catch(function(err) { return { entry: a, detail: null, err: err }; });
+                })).then(function(results) {
+                    clearStatus();
+                    results.forEach(function(r) {
+                        var card = r.err ? renderErrorCard(r.entry, r.err) : renderCard(r.entry, r.detail);
+                        card.setAttribute("data-search", buildSearchText(r.entry, r.detail));
+                        card.setAttribute("data-slug", (r.entry && r.entry.name) || "");
+                        card.setAttribute("data-filter-match", "true");
+                        container.appendChild(card);
+                        if (r.entry && r.entry.name) renderedSlugs[r.entry.name] = true;
+                    });
+                    runSearch();
+                    return { added: results.length, total: agents.length, duplicates: agents.length - fresh.length };
+                });
+            }
+
+            function registerServer(url) {
+                return fetchJson(url).then(appendAgentsFromCapabilities);
+            }
+
+            // POST a remote GetCapabilities URL to our server, which fetches
+            // every agent it publishes and writes them into gas_registry.db.
+            // (The remote fetch is server-side, so no browser CORS limits.)
+            function registerToDatabase(capabilitiesUrl) {
+                return fetch(apiUrl("/registry/api/gas/register"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: capabilitiesUrl })
+                }).then(function(r) {
+                    return r.json().then(function(body) {
+                        if (!r.ok || !body || body.ok === false) {
+                            throw new Error(body && body.error ? body.error : ("HTTP " + r.status));
+                        }
+                        return body; // { ok, registered: [...], count }
+                    });
+                });
+            }
+
+            // ---- Initial load from the default GAS server ----
+            registerServer(CAPABILITIES_URL).catch(function(err) {
+                setStatus("Failed to load agent registry: " + (err && err.message ? err.message : String(err)));
+            });
+
+            // ---- Search filter ----
+            var searchInput = document.getElementById("search-input");
+            var emptyStateEl = null;
+
+            function updateEmptyState(visible, hasQuery) {
+                if (hasQuery && visible === 0 && container.querySelectorAll(".card").length > 0) {
+                    if (!emptyStateEl) {
+                        emptyStateEl = document.createElement("p");
+                        emptyStateEl.className = "empty-state";
+                        container.appendChild(emptyStateEl);
+                    }
+                    emptyStateEl.textContent = "No agents match “" + searchInput.value + "”.";
+                } else if (emptyStateEl) {
+                    emptyStateEl.remove();
+                    emptyStateEl = null;
+                }
+            }
+
+            // Show/hide already-rendered cards by a set of matching slugs.
+            // names === null means "no query" -> show everything.
+            function applyNameFilter(names, hasQuery) {
+                var set = null;
+                if (names) {
+                    set = Object.create(null);
+                    names.forEach(function(n) { set[n] = true; });
+                }
+                var cards = container.querySelectorAll(".card");
+                cards.forEach(function(card) {
+                    var slug = card.getAttribute("data-slug") || "";
+                    var match = !set || !!set[slug];
+                    card.setAttribute("data-filter-match", match ? "true" : "false");
+                });
+                resetPagination();
+            }
+
+            // Offline/fallback: the original client-side substring filter.
+            function applySearchFilter() {
+                var q = (searchInput.value || "").trim().toLowerCase();
+                var cards = container.querySelectorAll(".card");
+                cards.forEach(function(card) {
+                    var hay = card.getAttribute("data-search") || "";
+                    var match = !q || hay.indexOf(q) !== -1;
+                    card.setAttribute("data-filter-match", match ? "true" : "false");
+                });
+                resetPagination();
+            }
+
+            // "Search by" field scope + boolean filter checkboxes (in the
+            // dropdown panel).
+            var fieldToggle = document.getElementById("field-toggle");
+            var fieldPanel = document.getElementById("field-panel");
+            var fieldOpts = Array.prototype.slice.call(
+                document.querySelectorAll("#field-panel .field-opt"));
+            // Filter dropdown temporarily disabled in the HTML; these are
+            // stubbed so the rest of the search code keeps working unchanged.
+            var filterInputs = [];
+            // var filterToggle = document.getElementById("filter-toggle");
+            // var filterPanel = document.getElementById("filter-panel");
+            // var filterBadge = document.getElementById("filter-badge");
+            // var filterClear = document.getElementById("filter-clear");
+
+            // Current "search by" scope ("" = all fields).
+            var currentField = "";
+            function setSearchField(value, label) {
+                currentField = value || "";
+                searchInput.setAttribute(
+                    "placeholder",
+                    currentField ? ("Search by " + label + "…") : "Search agents…");
+                fieldOpts.forEach(function(opt) {
+                    opt.classList.toggle(
+                        "active", (opt.getAttribute("data-field") || "") === currentField);
+                });
+            }
+
+            function activeFilterParams() {
+                // Filter dropdown temporarily disabled -- no boolean filters.
+                return [];
+            }
+
+            // Server-side query: real SQL (LIKE + json_each) on gas_registry.db.
+            var searchSeq = 0;
+            function runSearch() {
+                var q = (searchInput.value || "").trim();
+                var params = activeFilterParams();
+                if (q) {
+                    params.unshift("q=" + encodeURIComponent(q));
+                    if (currentField) params.push("field=" + encodeURIComponent(currentField));
+                }
+
+                // Nothing to query -> show everything.
+                if (params.length === 0) { applyNameFilter(null, false); return; }
+
+                var seq = ++searchSeq;
+                fetch(apiUrl("/registry/api/gas/search?" + params.join("&")), { cache: "no-store" })
+                    .then(function(r) { return r.json(); })
+                    .then(function(body) {
+                        if (seq !== searchSeq) return; // a newer keystroke won
+                        if (!body || body.ok === false) {
+                            throw new Error(body && body.error ? body.error : "search failed");
+                        }
+                        var names = (body.agents || []).map(function(a) { return a.name; });
+                        applyNameFilter(names, true);
+                    })
+                    .catch(function() {
+                        if (seq !== searchSeq) return;
+                        applySearchFilter(); // fall back to client-side
+                    });
+            }
+
+            var searchTimer = null;
+            searchInput.addEventListener("input", function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(runSearch, 250);
+            });
+            // Filter checkboxes are commented out -- nothing to wire.
+
+            // ---- Dropdown open/close (shared by both menus) ----
+            function setMenuOpen(panel, toggle, open) {
+                panel.hidden = !open;
+                toggle.setAttribute("aria-expanded", open ? "true" : "false");
+            }
+            function closeAllMenus() {
+                setMenuOpen(fieldPanel, fieldToggle, false);
+            }
+            function wireMenu(panel, toggle) {
+                toggle.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    var willOpen = panel.hidden;
+                    closeAllMenus();                 // only one open at a time
+                    setMenuOpen(panel, toggle, willOpen);
+                });
+            }
+            wireMenu(fieldPanel, fieldToggle);
+
+            document.addEventListener("click", function(e) {
+                if (!fieldPanel.contains(e.target) && !fieldToggle.contains(e.target)) {
+                    closeAllMenus();
+                }
+            });
+            document.addEventListener("keydown", function(e) {
+                if (e.key === "Escape") closeAllMenus();
+            });
+
+            // Pick a "search by" scope -> updates placeholder + re-runs search.
+            fieldOpts.forEach(function(opt) {
+                opt.addEventListener("click", function() {
+                    setSearchField(opt.getAttribute("data-field") || "",
+                                   opt.getAttribute("data-label") || "");
+                    closeAllMenus();
+                    runSearch();
+                });
+            });
+
+            // filterClear.addEventListener("click", function() {
+            //     filterInputs.forEach(function(cb) { cb.checked = false; });
+            //     runSearch();
+            // });
+
+            // ---- Register modal ----
+            var registerBtn = document.getElementById("register-btn");
+            registerBtn.addEventListener("click", openRegisterModal);
+
+            function openRegisterModal() {
+                var defaultUrl = "https://www.geospatial-agentic-services.online";
+                modalContent.innerHTML =
+                    '<button class="modal-close" type="button" aria-label="Close">×</button>' +
+                    '<h2 class="modal-title">Register GAS Server</h2>' +
+                    '<p class="modal-meta">Enter the base URL of a GAS server. Click <strong>Register</strong> to register all agents from that server into this registry. If this server has been registered before, the latest GetCapabilities and DescribeAgent information will update the existing agent records. To register only selected agents, click <strong>List Agents</strong>, choose the agents you want, and then register the selected items.</p>' +
+                    '<form id="register-form" novalidate>' +
+                        '<div class="form-row">' +
+                            '<label class="form-label" for="register-url-input">GAS Server URL</label>' +
+                            '<input id="register-url-input" class="form-input" type="url" required ' +
+                                'placeholder="https://example.com" ' +
+                                'value="' + escapeHtml(defaultUrl) + '">' +
+                            <!-- '<p class="form-hint">The server must allow cross-origin requests (CORS) or be on the same origin as this page.</p>' + -->
+                        '</div>' +
+                        '<div id="register-status" class="form-status"></div>' +
+                        '<div id="register-agent-list"></div>' +
+                        '<div class="form-actions">' +
+                            '<button type="button" id="register-cancel" class="secondary-btn">Cancel</button>' +
+                            '<button type="button" id="register-list" class="secondary-btn">List Agents</button>' +
+                            '<button type="submit" id="register-submit" class="primary-btn">Register</button>' +
+                        '</div>' +
+                    '</form>';
+
+                modalContent.querySelector(".modal-close").addEventListener("click", closeModal);
+                modalContent.querySelector("#register-cancel").addEventListener("click", closeModal);
+                modalContent.querySelector("#register-form").addEventListener("submit", handleRegisterSubmit);
+                modalContent.querySelector("#register-list").addEventListener("click", handleListAgents);
+                modalContent.scrollTop = 0;
+                modalOverlay.classList.add("open");
+                document.body.style.overflow = "hidden";
+                setTimeout(function() {
+                    var input = document.getElementById("register-url-input");
+                    if (input) { input.focus(); input.select(); }
+                }, 50);
+            }
+
+            function listRemoteAgents(capabilitiesUrl) {
+                return fetch(apiUrl("/registry/api/gas/list-remote"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: capabilitiesUrl })
+                }).then(function(r) {
+                    return r.json().then(function(body) {
+                        if (!r.ok || !body || body.ok === false) {
+                            throw new Error(body && body.error ? body.error : ("HTTP " + r.status));
+                        }
+                        return body; // { ok, agents: [...] }
+                    });
+                });
+            }
+
+            function registerSelected(capabilitiesUrl, names) {
+                return fetch(apiUrl("/registry/api/gas/register-selected"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: capabilitiesUrl, names: names })
+                }).then(function(r) {
+                    return r.json().then(function(body) {
+                        if (!r.ok || !body || body.ok === false) {
+                            throw new Error(body && body.error ? body.error : ("HTTP " + r.status));
+                        }
+                        return body;
+                    });
+                });
+            }
+
+            function renderRemoteAgentList(agents) {
+                var box = document.getElementById("register-agent-list");
+                if (!agents.length) {
+                    box.innerHTML = '<p class="form-hint" style="margin-top:14px;">No agents found at that URL.</p>';
+                    return;
+                }
+                var rows = agents.map(function(a) {
+                    var slug = a.name || "";
+                    var displayName = a.displayName && a.displayName !== slug ? a.displayName : toDisplayTitle(slug);
+                    var version = a.version ? '<span class="agent-version">v' + escapeHtml(a.version) + '</span>' : '';
+                    var desc = a.description ? escapeHtml(a.description) : '<em>No description provided.</em>';
+                    return '<label class="remote-agent-item">' +
+                        '<input type="checkbox" class="remote-agent-cb" value="' + escapeHtml(slug) + '" checked>' +
+                        '<span class="info">' +
+                            '<span class="title-row">' +
+                                '<span class="agent-name">' + escapeHtml(displayName) + '</span>' +
+                                version +
+                            '</span>' +
+                            '<p class="agent-desc">' + desc + '</p>' +
+                        '</span>' +
+                    '</label>';
+                }).join("");
+                box.innerHTML =
+                    '<div class="remote-agent-list">' +
+                        '<div class="remote-agent-list-header">' +
+                            '<label class="select-all">' +
+                                '<input type="checkbox" id="remote-agent-select-all" checked> ' +
+                                'Select all (' + agents.length + ')' +
+                            '</label>' +
+                            '<span id="remote-agent-count">' + agents.length + ' selected</span>' +
+                        '</div>' +
+                        '<div class="remote-agent-grid">' + rows + '</div>' +
+                    '</div>';
+
+                var selectAll = box.querySelector("#remote-agent-select-all");
+                var cbs = box.querySelectorAll(".remote-agent-cb");
+                var countEl = box.querySelector("#remote-agent-count");
+                function updateCount() {
+                    var n = 0;
+                    cbs.forEach(function(cb) { if (cb.checked) n++; });
+                    countEl.textContent = n + " selected";
+                    selectAll.checked = (n === cbs.length);
+                    selectAll.indeterminate = (n > 0 && n < cbs.length);
+                }
+                selectAll.addEventListener("change", function() {
+                    cbs.forEach(function(cb) { cb.checked = selectAll.checked; });
+                    updateCount();
+                });
+                cbs.forEach(function(cb) { cb.addEventListener("change", updateCount); });
+            }
+
+            function getSelectedRemoteNames() {
+                var box = document.getElementById("register-agent-list");
+                if (!box) return null;
+                var cbs = box.querySelectorAll(".remote-agent-cb");
+                if (!cbs.length) return null;
+                var names = [];
+                cbs.forEach(function(cb) { if (cb.checked) names.push(cb.value); });
+                return names;
+            }
+
+            function handleListAgents() {
+                var input = document.getElementById("register-url-input");
+                var statusBox = document.getElementById("register-status");
+                var listBtn = document.getElementById("register-list");
+                var url = (input.value || "").trim();
+                if (!url) {
+                    statusBox.className = "form-status error";
+                    statusBox.textContent = "Please enter a URL.";
+                    return;
+                }
+                statusBox.className = "form-status info";
+                statusBox.textContent = "Fetching agent list from server…";
+                listBtn.disabled = true;
+                listRemoteAgents(url)
+                    .then(function(body) {
+                        var agents = (body && body.agents) || [];
+                        renderRemoteAgentList(agents);
+                        statusBox.className = "form-status success";
+                        statusBox.textContent = "Found " + agents.length + " agent" +
+                            (agents.length === 1 ? "" : "s") +
+                            (agents.length ? " — review and uncheck any you don't want, then click Register." : ".");
+                    })
+                    .catch(function(err) {
+                        statusBox.className = "form-status error";
+                        statusBox.textContent = err && err.message ? err.message : String(err);
+                    })
+                    .then(function() { listBtn.disabled = false; });
+            }
+
+            function handleRegisterSubmit(e) {
+                e.preventDefault();
+                var input = document.getElementById("register-url-input");
+                var statusBox = document.getElementById("register-status");
+                var submitBtn = document.getElementById("register-submit");
+                var url = (input.value || "").trim();
+                if (!url) {
+                    statusBox.className = "form-status error";
+                    statusBox.textContent = "Please enter a URL.";
+                    return;
+                }
+
+                var selected = getSelectedRemoteNames();
+                if (selected !== null && selected.length === 0) {
+                    statusBox.className = "form-status error";
+                    statusBox.textContent = "Select at least one agent to register.";
+                    return;
+                }
+
+                statusBox.className = "form-status info";
+                statusBox.textContent = "Fetching capabilities…";
+                submitBtn.disabled = true;
+                input.disabled = true;
+
+                statusBox.textContent = selected
+                    ? "Registering " + selected.length + " selected agent" + (selected.length === 1 ? "" : "s") + "…"
+                    : "Registering agents into the database…";
+
+                var registerPromise = selected
+                    ? registerSelected(url, selected)
+                    : registerToDatabase(url);
+
+                registerPromise
+                    .then(function(res) {
+                        // Agents are now in the DB; refresh the catalog from
+                        // our local DB-backed capabilities to show new cards.
+                        return fetchJson(CAPABILITIES_URL)
+                            .then(appendAgentsFromCapabilities)
+                            .then(function(view) { return { res: res, view: view }; });
+                    })
+                    .then(function(o) {
+                        var registered = (o.res && o.res.count) || 0;
+                        var added = (o.view && o.view.added) || 0;
+                        statusBox.className = "form-status success";
+                        if (registered > 0) {
+                            statusBox.textContent = "Registered " + registered + " agent" + (registered === 1 ? "" : "s") +
+                                " into the database" +
+                                (added > 0 ? " — " + added + " new card" + (added === 1 ? "" : "s") + " added." :
+                                             " (already shown in catalog).");
+                        } else {
+                            statusBox.textContent = "No agents found at that URL.";
+                        }
+                        // Leave the modal open so the user can read the
+                        // result; they dismiss it via Close / Esc / overlay.
+                        var cancelBtn = modalContent.querySelector("#register-cancel");
+                        if (cancelBtn) cancelBtn.textContent = "Close";
+                        submitBtn.style.display = "none";
+                        input.disabled = true;
+                    })
+                    .catch(function(err) {
+                        statusBox.className = "form-status error";
+                        var msg = err && err.message ? err.message : String(err);
+                        statusBox.textContent = msg;
+                        submitBtn.disabled = false;
+                        input.disabled = false;
+                    });
+            }
+        })();
+    </script>
+</body>
+</html>

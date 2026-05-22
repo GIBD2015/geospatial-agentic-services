@@ -359,7 +359,8 @@ def test_agent_capability_authentication_is_documented_once():
 
         credentials = payload["execute_task"]["credentials"]
         if credentials["required"]:
-            assert credentials["one_of"] == ["OPENAI_API_KEY", "GIBD_API_KEY"], path
+            assert "OPENAI_API_KEY" in credentials["one_of"], path
+            assert set(credentials["one_of"]) <= {"OPENAI_API_KEY", "GIBD_API_KEY"}, path
         else:
             assert "none" in credentials["one_of"], path
             assert "No API key is required" in credentials["description"], path

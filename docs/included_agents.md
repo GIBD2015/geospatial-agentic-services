@@ -3,8 +3,8 @@
 This GAS server includes working geospatial agents that also serve as concrete
 implementation examples for developers. They show different ways to build GAS
 services: deterministic geospatial workflows, model-assisted code execution,
-data retrieval, data inspection, mapping, raster processing, vector analysis,
-and spatial statistics.
+data retrieval, data inspection, workflow planning, mapping, raster processing,
+vector analysis, and spatial statistics.
 
 When adding a new agent, start by finding the included agent that is closest to
 your intended design. Then inspect its implementation file, service wrapper,
@@ -17,6 +17,7 @@ and capability document.
 | `geospatial_data_retrieval_agent` | Geospatial Data Retrieval Agent | Retrieves geospatial datasets from supported external sources. | Model-assisted source selection and code generation using data-source handbooks. | Optional input datasets. | GeoPackage, GeoJSON, GeoTIFF, Shapefile, CSV, or source-specific files. |
 | `pasda_agent` | PASDA Discovery Agent | Finds and downloads datasets from PASDA. | Repository-specific discovery workflow with model-assisted search and packaging. | Optional input datasets. | GeoPackage, GeoJSON, or source-specific PASDA files. |
 | `geospatial_data_inspection_agent` | Geospatial Data Inspection Agent | Checks vector, raster, and tabular datasets for quality and workflow readiness. | Deterministic inspection plus optional LLM-assisted interpretation. | Required input datasets. | TXT and HTML inspection reports. |
+| `geospatial_workflow_planning_agent` | Geospatial Workflow Planning Agent | Discovers GAS capabilities and plans client-side service chains. | Capability-aware LLM planning with JSON, Markdown, code, notebook, and graph artifacts. | Optional input datasets and optional GAS GetCapabilities URLs. | Workflow plan JSON, Markdown, optional Python, notebook, and HTML graph. |
 | `vector_analysis_agent` | Vector Analysis Agent | Performs vector joins, buffers, clips, intersections, filtering, and aggregation. | Deterministic fast paths for common operations plus model-backed fallback. | Required input datasets. | GeoPackage, GeoJSON, or CSV. |
 | `raster_agent` | Raster Agent | Performs raster and mixed raster-vector analysis. | Code-driven workflow with persistent runtime registry. | Required input datasets. | GeoTIFF, GeoPackage, GeoJSON, or CSV. |
 | `map_projection_agent` | Map Projection Agent | Reprojects geospatial datasets between coordinate reference systems. | Deterministic local CRS selection and reprojection with pyproj/geopandas. | Required input datasets. | GeoPackage, GeoJSON, GeoTIFF, or Shapefile. |
@@ -81,6 +82,26 @@ Files:
 - `gas_server/agents/geospatial_data_inspection_agent.py`
 - `gas_server/services/geospatial_data_inspection_agent_service.py`
 - `gas_server/capabilities/geospatial_data_inspection_agent.json`
+
+### Geospatial Workflow Planning Agent
+
+`geospatial_workflow_planning_agent` reads GAS GetCapabilities and
+DescribeAgent documents, decomposes a broad user goal into service steps, and
+matches each step to suitable GAS agents. It returns plans and optional
+client-side execution artifacts, but it does not run downstream services.
+
+Useful developer pattern:
+
+- Use GAS capability documents as the source of truth for service discovery.
+- Keep planning separate from execution.
+- Return both machine-readable and human-readable artifacts.
+- Generate optional client-side code or notebooks without embedding real keys.
+
+Files:
+
+- `gas_server/agents/geospatial_workflow_planning_agent.py`
+- `gas_server/services/geospatial_workflow_planning_agent_service.py`
+- `gas_server/capabilities/geospatial_workflow_planning_agent.json`
 
 ### Vector Analysis Agent
 

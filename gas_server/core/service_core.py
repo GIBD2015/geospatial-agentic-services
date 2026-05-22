@@ -404,11 +404,15 @@ def _gas_execute_task_to_run_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
         params["input_datasets"] = inputs.get("input_datasets")
     if "artifact_delivery" in outputs:
         params["output_delivery"] = outputs.get("artifact_delivery")
+    for key, value in outputs.items():
+        if key != "artifact_delivery":
+            params.setdefault(key, value)
 
     params["mode"] = _extract_task_mode(payload)
 
     return {
         "query": instructions.strip(),
+        "parameters": params,
         **params,
     }
 
@@ -881,12 +885,16 @@ def _extract_text_and_input_dataset_paths(payload: Dict[str, Any]) -> Tuple[str,
     # Params, and parts branches remain as a compatibility adapter for older
     # local tests or direct service clients.
     params: Dict[str, Any] = {}
+    if isinstance(payload.get("parameters"), dict):
+        params.update(payload["parameters"])
     if isinstance(payload.get("metadata"), dict):
         params.update(payload["metadata"])
     if isinstance(payload.get("Params"), dict):
         params.update(payload["Params"])
     if isinstance(payload.get("params"), dict):
         params.update(payload["params"])
+    if isinstance(message.get("parameters"), dict):
+        params.update(message["parameters"])
     if isinstance(message.get("metadata"), dict):
         params.update(message["metadata"])
     if isinstance(message.get("Params"), dict):
@@ -904,6 +912,11 @@ def _extract_text_and_input_dataset_paths(payload: Dict[str, Any]) -> Tuple[str,
             params[field_name] = payload[field_name]
         if field_name in message and field_name not in params:
             params[field_name] = message[field_name]
+
+    reserved_payload_fields = {"message", "parts", "task", "query", "text", "prompt", "content"}
+    for key, value in payload.items():
+        if key not in reserved_payload_fields and key not in params:
+            params[key] = value
 
     parts = message.get("parts")
     if not isinstance(parts, list) or not parts:
@@ -2238,7 +2251,7 @@ def stream_agent_from_payload(spec: AgentSpec, state: Dict[str, Any], payload: D
                     heartbeat = _make_event(
                         "progress",
                         message=(
-                            f"The {spec.agent_id} is still working. Long LLM calls, code execution, "
+                            "I'm still working. Long LLM calls, code execution, "
                             "or geospatial file processing can take a little while."
                         ),
                         stage="heartbeat",
