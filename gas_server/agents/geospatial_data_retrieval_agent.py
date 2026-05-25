@@ -69,13 +69,81 @@ class GeospatialDataRetrievalAgent(GeoAgent):
         )
 
     def run(self, query, input_dataset_paths=None, progress_callback=None):
-        dataset_paths = self.normalize_dataset_paths(input_dataset_paths)
-        dataset_path = dataset_paths[0] if dataset_paths else None
-        data_request = query
-        start_time = time.perf_counter()
+        
         self.llm_calls = 0
         self.input_tokens = 0
         self.output_tokens = 0
+        overall_start_time = time.perf_counter()
+
+        sub_requests = self.decompose_request(query, progress_callback=progress_callback)
+
+        if len(sub_requests) <= 1:
+            single_query = sub_requests[0] if sub_requests else query
+            return self._execute_one_request(
+                single_query,
+                input_dataset_paths=input_dataset_paths,
+                progress_callback=progress_callback,
+                start_time=overall_start_time,
+            )
+
+        self._emit_progress(
+            progress_callback,
+            stage="planning",
+            message=(
+                f"I detected {len(sub_requests)} datasets in your request. "
+                "I will download each one as a separate sub-task and return all artifacts."
+            ),
+            data={"sub_request_count": len(sub_requests), "sub_requests": sub_requests},
+        )
+
+        sub_responses = []
+        for idx, sub_query in enumerate(sub_requests, start=1):
+            self._emit_progress(
+                progress_callback,
+                stage="planning",
+                message=f"Starting sub-task {idx} of {len(sub_requests)}: {sub_query}",
+                data={
+                    "sub_request_index": idx,
+                    "sub_request_total": len(sub_requests),
+                    "sub_request": sub_query,
+                },
+            )
+            sub_start = time.perf_counter()
+            try:
+                sub_response = self._execute_one_request(
+                    sub_query,
+                    input_dataset_paths=input_dataset_paths,
+                    progress_callback=progress_callback,
+                    start_time=sub_start,
+                )
+            except Exception as exc:
+                logging.exception(f"Sub-request {idx} failed unexpectedly.")
+                sub_response = {
+                    "outputs": {
+                        "text": f"Sub-request failed: {exc}",
+                        "dataset_path": None,
+                        "dataset_paths": [],
+                        "dataset_size": self.empty_dataset_size(),
+                    },
+                    "script": "",
+                    "duration": f"{time.perf_counter() - sub_start:.2f}s",
+                }
+            sub_responses.append(sub_response)
+
+        return self._build_multi_response(
+            start_time=overall_start_time,
+            text_input=query,
+            input_dataset_path=(input_dataset_paths[0] if input_dataset_paths else None),
+            sub_requests=sub_requests,
+            sub_responses=sub_responses,
+            progress_callback=progress_callback,
+        )
+
+    def _execute_one_request(self, query, input_dataset_paths=None, progress_callback=None, start_time=None):
+        dataset_paths = self.normalize_dataset_paths(input_dataset_paths)
+        dataset_path = dataset_paths[0] if dataset_paths else None
+        data_request = query
+        start_time = start_time if start_time is not None else time.perf_counter()
         selected_data_source = "Unknown"
         handbook_str = ""
         code = ""
@@ -363,10 +431,15 @@ class GeospatialDataRetrievalAgent(GeoAgent):
             )
         except Exception as exc:
             logging.exception("Data retrieval failed.")
+            traceback_str = traceback.format_exc()
             self._emit_progress(
                 progress_callback,
                 stage="error",
-                message=f"The data retrieval workflow hit an error, so I will package any partial outputs and return diagnostics: {exc}",
+                message=(
+                    "The data retrieval workflow hit an error, so I will package any partial "
+                    f"outputs and return diagnostics: {exc}"
+                ),
+                data={"error_type": type(exc).__name__, "traceback": traceback_str},
             )
             downloaded_files = self.discover_output_files(set(), self.list_output_files(), output_stem)
             output_dataset_path = self.pick_primary_output(downloaded_files, output_stem)
@@ -377,7 +450,7 @@ class GeospatialDataRetrievalAgent(GeoAgent):
                 start_time=start_time,
                 text_input=data_request,
                 input_dataset_path=dataset_path,
-                output_text=f"Data retrieval failed: {exc}",
+                output_text=f"Data retrieval failed: {exc}\n\nTraceback:\n{traceback_str}",
                 output_dataset_path=output_dataset_path,
                 dataset_size=dataset_size,
                 script=code,
@@ -560,6 +633,231 @@ class GeospatialDataRetrievalAgent(GeoAgent):
 
     ##=========================SUPPORTING FUNCTIONS====================================================
 
+    def decompose_request(self, query, progress_callback=None):
+        """Split a natural-language request into one or more independent
+        single-dataset download sub-requests.
+
+        Returns a list of self-contained request strings, each describing
+        exactly one dataset to download. Single-dataset requests return a
+        one-item list (the original query, lightly normalized).
+        """
+        text = (query or "").strip()
+        if not text:
+            return [query]
+
+        self._emit_progress(
+            progress_callback,
+            stage="planning",
+            message="I am checking whether the request asks for one dataset or several.",
+        )
+
+        decomposition_prompt = (
+            "You are an expert geospatial data analyst. Read the user's data-retrieval "
+            "request below and decide whether it asks for ONE dataset or SEVERAL "
+            "independent datasets (for example: county boundaries + earthquake events, "
+            "or DEM + land cover for the same area). "
+            "If the request is for a single dataset, return a JSON object: "
+            "{\"sub_requests\": [\"<the original request, lightly cleaned>\"]}. "
+            "If the request contains multiple datasets, return one self-contained "
+            "sub-request string per dataset, each fully describing the data source "
+            "(if specified), geography, time period, attributes, and format. Do not "
+            "split a single dataset into multiple steps (e.g., 'download X and then "
+            "filter X' is ONE sub-request). Do not add commentary; return only the "
+            "JSON object. DO NOT use ```json fences.\n\n"
+            f"User request:\n{text}\n\n"
+            "Reply example for one dataset:\n"
+            "{\"sub_requests\": [\"Download US county boundaries from the US Census "
+            "Bureau as a GeoPackage.\"]}\n\n"
+            "Reply example for two datasets:\n"
+            "{\"sub_requests\": ["
+            "\"Download 2020 US county boundaries from the US Census Bureau as a GeoPackage.\", "
+            "\"Download recent USGS earthquake events with magnitude 2.5+ from the last 30 days as GeoJSON.\""
+            "]}"
+        )
+
+        try:
+            response = self._create_chat_completion(
+                messages=[{"role": "system", "content": decomposition_prompt}],
+            )
+            reply = response.choices[0].message.content
+        except Exception as exc:
+            if self._is_auth_error(exc):
+                self._raise_auth_error(exc)
+            logging.warning(f"Request decomposition failed; treating as a single request: {exc}")
+            return [text]
+
+        sub_requests = self._parse_decomposition_reply(reply)
+        if not sub_requests:
+            return [text]
+
+        sub_requests = [s.strip() for s in sub_requests if isinstance(s, str) and s.strip()]
+        if not sub_requests:
+            return [text]
+
+        self._emit_progress(
+            progress_callback,
+            stage="planning",
+            message=(
+                f"The request was decomposed into {len(sub_requests)} sub-request(s)."
+            ),
+            data={"sub_request_count": len(sub_requests), "sub_requests": sub_requests},
+        )
+        return sub_requests
+
+    def _parse_decomposition_reply(self, reply_content):
+        if not reply_content or not isinstance(reply_content, str):
+            return []
+        cleaned = reply_content.strip()
+        cleaned = re.sub(r"^```(?:json|python)?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+        try:
+            import json
+            parsed = json.loads(cleaned)
+        except Exception:
+            try:
+                parsed = ast.literal_eval(cleaned)
+            except Exception as exc:
+                logging.warning(f"Could not parse decomposition reply: {exc}")
+                return []
+        if isinstance(parsed, dict):
+            value = parsed.get("sub_requests")
+            if isinstance(value, list):
+                return value
+        if isinstance(parsed, list):
+            return parsed
+        return []
+
+    def _build_multi_response(
+        self,
+        start_time,
+        text_input,
+        input_dataset_path,
+        sub_requests,
+        sub_responses,
+        progress_callback=None,
+    ):
+        # Paths are placed in exactly ONE field (outputs.dataset_paths) so the
+        # server's transformer relocates each file once. Per-sub-task records
+        # carry only the basename plus metadata (no path strings) so they do
+        # not collide with the relocation pass.
+        all_artifacts = []
+        sub_task_records = []
+        successful = 0
+        failed = 0
+        combined_script_parts = []
+
+        for idx, (req, resp) in enumerate(zip(sub_requests, sub_responses), start=1):
+            outputs = (resp or {}).get("outputs", {}) or {}
+            artifacts = [p for p in (outputs.get("dataset_paths") or []) if p]
+            all_artifacts.extend(artifacts)
+            if artifacts:
+                successful += 1
+            else:
+                failed += 1
+
+            sub_task_records.append({
+                "sub_request_index": idx,
+                "sub_request": req,
+                "summary": outputs.get("text"),
+                "artifact_count": len(artifacts),
+                "artifact_basenames": [os.path.basename(p) for p in artifacts],
+                "dataset_size": outputs.get("dataset_size") or self.empty_dataset_size(),
+                "duration": (resp or {}).get("duration"),
+                "validation": ((resp or {}).get("complementary", {}) or {}).get("Validation"),
+            })
+
+            script = (resp or {}).get("script") or ""
+            if script:
+                combined_script_parts.append(
+                    f"# === Sub-request {idx}: {req} ===\n{script}"
+                )
+
+        overall_text = (
+            f"Multi-dataset retrieval: {successful} of {len(sub_requests)} sub-requests "
+            f"produced artifacts ({failed} failed). "
+            f"Total artifacts: {len(all_artifacts)}."
+        )
+
+        self._emit_progress(
+            progress_callback,
+            stage="response_preparation",
+            message=(
+                f"All sub-tasks finished. {successful} succeeded, {failed} failed, "
+                f"{len(all_artifacts)} artifact(s) packaged."
+            ),
+            data={
+                "successful_sub_tasks": successful,
+                "failed_sub_tasks": failed,
+                "artifact_count": len(all_artifacts),
+            },
+        )
+
+        outputs = {
+            "text": overall_text,
+            "dataset_paths": all_artifacts,
+            "dataset_size": self.empty_dataset_size(),
+            "sub_tasks": sub_task_records,
+        }
+
+        combined_script = "\n\n".join(combined_script_parts)
+
+        return {
+            "agent_name": self.agent_name,
+            "agent_version": self.agent_version,
+            "model": self.model,
+            "duration": f"{time.perf_counter() - start_time:.2f}s",
+            "total_input_tokens": self.input_tokens,
+            "total_output_tokens": self.output_tokens,
+            "inputs": {
+                "text": text_input,
+                "dataset_path": input_dataset_path,
+            },
+            "outputs": outputs,
+            "metrics": {
+                "llm_calls": self.llm_calls,
+                "tool_calls": 0,
+                "number_of_artifacts": len(all_artifacts),
+                "sub_task_count": len(sub_requests),
+                "successful_sub_tasks": successful,
+                "failed_sub_tasks": failed,
+            },
+            "environment": {
+                "python_version": sys.version.split()[0],
+                "domain-specific libraries": self.DOMAIN_LIBRARIES,
+            },
+            "script": combined_script,
+            "complementary": {
+                "Execution": {
+                    "Inputs": {
+                        "text": text_input,
+                        "dataset_path": input_dataset_path,
+                    },
+                    "Outputs": {
+                        "text": overall_text,
+                        "artifact_count": len(all_artifacts),
+                        "sub_tasks": sub_task_records,
+                    },
+                },
+                "Provenance": {
+                    "Lineage": {
+                        "steps": [
+                            "Request decomposition via LLM",
+                            "Per-sub-request: source selection, handbook loading, code generation, code execution and debugging",
+                            "Per-sub-request: output normalization",
+                            "Aggregation of all sub-task artifacts and diagnostics",
+                        ],
+                        "note": (
+                            f"Decomposed into {len(sub_requests)} sub-request(s); "
+                            "each ran the standard single-download pipeline independently."
+                        ),
+                    },
+                    "Tool Calls": {},
+                    "LLM Calls": self.llm_calls,
+                },
+                "Sub-Tasks": sub_task_records,
+            },
+        }
+
     def _create_chat_completion(self, messages, model_name=None):
         self.llm_calls += 1
         response = self.client.chat.completions.create(
@@ -688,6 +986,18 @@ class GeospatialDataRetrievalAgent(GeoAgent):
         }
 
     def normalize_selected_data_source(self, selected_data_source, data_request, data_source_dict):
+        if isinstance(selected_data_source, (list, tuple)):
+            for candidate in selected_data_source:
+                if isinstance(candidate, str) and candidate in data_source_dict:
+                    return candidate
+            selected_data_source = next(
+                (str(item) for item in selected_data_source if isinstance(item, str) and item.strip()),
+                "",
+            )
+
+        if not isinstance(selected_data_source, str):
+            selected_data_source = str(selected_data_source) if selected_data_source is not None else ""
+
         if selected_data_source in data_source_dict:
             return selected_data_source
 
