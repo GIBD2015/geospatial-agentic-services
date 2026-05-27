@@ -8,28 +8,42 @@
 [![GIBD Lab](https://img.shields.io/badge/GIBD-Lab-lightgrey.svg)](https://giscience.psu.edu/)
 
 This repository provides a reference implementation and developer toolkit for
-the Geospatial Agentic Services (GAS) framework. Its main component is a GAS
-server that publishes geospatial agents as discoverable web services through
-standard `GetCapabilities` and `DescribeAgent` JSON documents. The repository
-also includes a lightweight Python client SDK, a GAS Registry web app, example
+the Geospatial Agentic Services (GAS) framework. GAS focuses on geospatial
+interoperability in the era of autonomous GIS and geospatial agents. Its goal
+is to make geospatial agents, their capabilities, and workflows easier to
+describe, discover, invoke, compose, validate, and reuse across different
+platforms.
+
+GAS does not aim to prescribe how geospatial agents should be designed, how
+they should reason, or how general agentic systems should be built. It also
+does not assume that all geospatial agents must follow one specific
+architecture, protocol, or implementation pattern. Instead, GAS focuses on the
+interoperability layer needed when heterogeneous geospatial agents and services
+need to work together.
+
+The main component of this repository is a GAS server that publishes
+geospatial agents as discoverable web services through standard
+`GetCapabilities` and `DescribeAgent` JSON documents. The repository also
+includes a lightweight Python client SDK, a GAS Registry web app, example
 notebooks, developer documentation, and working agent implementations.
 
 The included server framework handles service discovery, task execution,
 streaming progress, artifact delivery, and response normalization. The
-[included agents](docs/included_agents.md) demonstrate how intelligent
-geospatial workflows such as data retrieval, workflow planning, mapping,
-raster analysis, vector analysis, data inspection, and spatial statistics can
-be exposed as interoperable GAS services.
-
-For the conceptual framework behind this implementation, please refer to the
-GAS paper: [Geospatial Agentic Services: A Framework for Interoperable
-Geospatial Intelligence](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence).
+[included agents](docs/included_agents.md) demonstrate how geospatial
+workflows such as data retrieval, workflow planning, mapping, raster analysis,
+vector analysis, data inspection, and spatial statistics can be exposed as
+interoperable GAS services. These agents are provided as reference examples,
+not as a prescribed model for how all geospatial agents should be implemented.
 
 The public [GAS Registry](http://geospatial-agentic-services.online/registry)
 is a searchable catalog of published GAS agent services. It reads GAS
 `GetCapabilities` and `DescribeAgent` documents from registered servers and
 helps users, applications, and AI orchestrators discover interoperable
-geospatial agents.
+geospatial agents and services.
+
+For the conceptual framework behind this implementation, please refer to the
+GAS paper: [Geospatial Agentic Services: A Framework for Interoperable
+Geospatial Intelligence](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence).
 
 ## Run the GAS Server
 
