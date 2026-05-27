@@ -26,10 +26,7 @@ python -m pip install -e .
 ```python
 from gas_client import GasClient
 
-client = GasClient(
-    "https://your-gas-server.com",
-    openai_api_key="YOUR_OPENAI_API_KEY",
-)
+client = GasClient("https://your-gas-server.com")
 
 print(client.list_agents())
 
@@ -38,9 +35,31 @@ agent = client.agent("geospatial_data_retrieval_agent")
 result = agent.execute_task(
     "Download Pennsylvania county boundaries from Census Bureau.",
     mode="sync",
+    credentials={"OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"},
 )
 
 client.print_task_summary(result)
+```
+
+Some agents return several artifacts from one call. For example,
+`geospatial_data_retrieval_agent` can decompose a multi-dataset request into
+sub-tasks and return all dataset URLs via `client.get_artifact_urls(result)`.
+
+Client-level credentials are optional defaults. You can omit them at client
+creation and pass credentials per task, or provide `default_credentials` with
+the provider-specific keys expected by your server, such as `GEMINI_API_KEY`.
+Before choosing a credential field name, users and orchestrating agents should
+inspect the selected agent's `DescribeAgent` JSON and use the key name that
+agent advertises.
+Task-level `credentials` override client defaults when needed.
+
+```python
+client = GasClient(
+    "https://your-gas-server.com",
+    default_credentials={
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
+    },
+)
 ```
 
 ## Streaming Tasks
@@ -73,6 +92,9 @@ request_body = client.build_execute_task_request(
         "https://example.com/counties.geojson",
     ],
     artifact_delivery="URL",
+    # Optional: include credentials here only when this call needs a key
+    # and the client was not created with suitable default credentials.
+    # Credential names are server- and agent-dependent.
     credentials={
         "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY",
     },
@@ -107,6 +129,7 @@ Important methods:
 - `wait_for_task(agent_id, task_id)`
 - `cancel_task(agent_id, task_id)`
 - `encode_dataset_file(path)`
+- `get_artifact_urls(result)`
 - `print_stream_event(event)`
 - `print_task_summary(result)`
 

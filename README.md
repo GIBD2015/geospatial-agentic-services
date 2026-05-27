@@ -227,19 +227,28 @@ Basic usage:
 ```python
 from gas_client import GasClient
 
-client = GasClient(
-    "https://your-gas-server.com",
-    openai_api_key="YOUR_OPENAI_API_KEY",
-)
+client = GasClient("https://your-gas-server.com")
 
 agent = client.agent("geospatial_data_retrieval_agent")
 result = agent.execute_task(
     "Download Pennsylvania county boundaries from Census Bureau.",
     mode="sync",
+    credentials={"OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"},
 )
 
 client.print_task_summary(result)
 ```
+
+The retrieval agent can also handle multi-dataset requests in one task. It
+decomposes the request into dataset-specific sub-tasks and returns all generated
+artifacts, so `client.get_artifact_urls(result)` may contain several URLs from
+one retrieval call.
+
+Client-level credentials are optional defaults. You can omit them at client
+creation and pass credentials per task, or provide `default_credentials` with
+the provider-specific keys expected by your server, such as `GEMINI_API_KEY`.
+Task-level `credentials` override client defaults when a specific agent call
+needs a different key.
 
 The SDK source is kept in [gas_client](gas_client), and its standalone package
 files are in [packages/gas-client](packages/gas-client). See
@@ -298,10 +307,19 @@ HTTP requests to streamed multi-agent service chains.
   downloads Pennsylvania CDC health data, county boundaries, fast-food
   restaurants, and PASDA hospital locations, then builds a browser-ready web
   mapping app.
+- [pa_hospital_accessibility_multi_download_workflow.ipynb](examples_for_using_gas_services/pa_hospital_accessibility_multi_download_workflow.ipynb)
+  demonstrates one retrieval request that downloads multiple Pennsylvania
+  datasets, then uses the returned artifact URLs in downstream analysis.
 - [raster_agent_dem_workflow.ipynb](examples_for_using_gas_services/raster_agent_dem_workflow.ipynb)
   downloads DEM data for Centre County, Pennsylvania, then uses `raster_agent`
   to generate raster outputs such as cleaned GeoTIFFs, hillshade, slope,
   elevation classes, and masks.
+- [county_obesity_hotspot_analysis_workflow.ipynb](examples_for_using_gas_services/county_obesity_hotspot_analysis_workflow.ipynb)
+  chains data retrieval with spatial statistics for county-level obesity
+  hotspot analysis.
+- [county_obesity_hotspot_analysis_workflow2.ipynb](examples_for_using_gas_services/county_obesity_hotspot_analysis_workflow2.ipynb)
+  provides a second obesity hotspot workflow variant using the updated agent
+  services.
 - [geospatial_workflow_planning_agent_demo.ipynb](examples_for_using_gas_services/geospatial_workflow_planning_agent_demo.ipynb)
   demonstrates the plan-only workflow planning agent, which reads GAS
   capabilities and returns a client-side workflow plan, optional code, notebook
@@ -311,8 +329,8 @@ HTTP requests to streamed multi-agent service chains.
   synchronous, asynchronous, and streaming request modes in one workflow.
 - [all_agents_streaming_workflow.ipynb](examples_for_using_gas_services/all_agents_streaming_workflow.ipynb)
   exercises every published GAS agent with streamed calls and collects the
-  resulting retrieval, inspection, projection, vector, raster, statistics,
-  static map, and web app artifacts.
+  resulting retrieval, inspection, ESDA, projection, vector, raster, spatial
+  analysis, statistics, static map, and web app artifacts.
 
 The folder also includes
 [geospatial_workflow_planning_agent_app.html](examples_for_using_gas_services/geospatial_workflow_planning_agent_app.html),

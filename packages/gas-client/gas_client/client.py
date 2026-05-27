@@ -83,8 +83,7 @@ class GasClient:
         self,
         server_url: str,
         *,
-        openai_api_key: str | None = None,
-        gibd_api_key: str | None = None,
+        default_credentials: Mapping | None = None,
         artifact_delivery: str = "URL",
         timeout: int = 30,
         session=None,
@@ -95,16 +94,16 @@ class GasClient:
         Parameters are intentionally simple:
         - `server_url` is the root GAS server URL, such as
           `http://127.0.0.1:4042`.
-        - `openai_api_key` or `gibd_api_key` is sent with ExecuteTask requests
-          when provided.
+        - `default_credentials` is an optional dictionary of server/agent
+          credential keys to include with ExecuteTask requests by default.
+          Per-request `credentials` overrides any client defaults.
         - `artifact_delivery` controls whether artifacts are returned as URLs
           or encoded file payloads by default.
         - `session` may be supplied by tests or advanced users who need custom
           HTTP behavior.
         """
         self.server_url = server_url.rstrip("/")
-        self.openai_api_key = openai_api_key
-        self.gibd_api_key = gibd_api_key
+        self.default_credentials = dict(default_credentials or {})
         self.artifact_delivery = artifact_delivery
         self.timeout = timeout
         self.session = session or requests.Session()
@@ -613,11 +612,8 @@ class GasClient:
         if model:
             request_parameters.setdefault("model", model)
 
-        request_credentials = dict(credentials or {})
-        if self.openai_api_key:
-            request_credentials.setdefault("OPENAI_API_KEY", self.openai_api_key)
-        if self.gibd_api_key:
-            request_credentials.setdefault("GIBD_API_KEY", self.gibd_api_key)
+        request_credentials = dict(self.default_credentials)
+        request_credentials.update(dict(credentials or {}))
 
         payload = {
             "task": {
@@ -720,6 +716,7 @@ class GasClient:
             return self.server_url
         params = {
             "SERVICE": "GAS",
+            "VERSION": "1.0.0",
             "REQUEST": "GetCapabilities",
         }
         return f"{self.server_url.rstrip('/')}/?{urlencode(params)}"

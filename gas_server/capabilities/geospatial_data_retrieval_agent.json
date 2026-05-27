@@ -3,7 +3,7 @@
   "profile": {
     "agent_id": "geospatial_data_retrieval_agent",
     "name": "Geospatial Data Retrieval Agent",
-    "description": "This agent interprets a user data request, matches it to the most suitable supported source, and uses the handbook guidance for that source. It generates and executes download logic, then normalizes the output into a usable geospatial dataset. It is best suited for general-purpose data acquisition from supported external sources including CDC PLACES, NYT COVID-19 data, OpenStreetMap, OpenTopography, OpenWeather, US Census Bureau, USGS Earthquakes, Natural Earth, USDA ERS, and EPA Air Quality System.",
+    "description": "This agent interprets a user data request, matches it to the most suitable supported source or sources, and uses the handbook guidance for each source. It generates and executes download logic, then normalizes the output into usable geospatial dataset artifacts. When a request asks for multiple independent datasets, the agent decomposes it into dataset-specific sub-requests and returns all generated artifacts together. It is best suited for general-purpose data acquisition from supported external sources including CDC PLACES, NYT COVID-19 data, OpenStreetMap, OpenTopography, OpenWeather, US Census Bureau, USGS Earthquakes, Natural Earth, USDA ERS, and EPA Air Quality System.",
     "version": "1.0.0",
     "base_url": "https://www.geospatial-agentic-services.online/agents/geospatial_data_retrieval_agent",
     "last_updated": "2026-04-28",
@@ -32,12 +32,13 @@
     {
       "skill_id": "geospatial_data_retrieval",
       "name": "Geospatial Data Retrieval",
-      "description": "Identifies the optimal data source, generates specific Python downloading scripts based on technical handbooks, executes the script with up to 10 retry attempts, and packages the result into a standardized format such as GeoPackage, GeoJSON, GeoTIFF, Shapefile, or CSV.",
+      "description": "Identifies the optimal data source or sources, decomposes multi-dataset requests into independent sub-requests when needed, generates specific Python downloading scripts based on technical handbooks, executes each script with up to 10 retry attempts, and packages the results into standardized formats such as GeoPackage, GeoJSON, GeoTIFF, Shapefile, or CSV.",
       "constraints": {
         "spatial": "Dependent on the data source selected (e.g., Census Bureau and USDA are US-only; OpenStreetMap and Natural Earth are global).",
         "temporal": "Dependent on the data source (e.g., NYT COVID-19 data is restricted to 2020-01-21 to 2023-03-23).",
         "other": [
           "Code execution will retry debugging up to 10 times upon failure.",
+          "Requests for multiple independent datasets are decomposed into separate sub-tasks; each successful sub-task contributes one or more artifacts to outputs.dataset_paths.",
           "Vector output is consolidated into a single GeoPackage by default when possible; explicit user requests for GeoJSON or other supported formats are honored when practical.",
           "Must map to one of the explicitly supported data source handbooks."
         ]
@@ -47,7 +48,7 @@
   "execute_task": {
     "operation_id": "execute_task",
     "name": "ExecuteTask",
-    "description": "Submits a natural-language geospatial task to the agent. The task.mode field controls sync, async, or stream execution.",
+    "description": "Submits a natural-language geospatial task to the agent. The task.mode field controls sync, async, or stream execution. A single task may request one dataset or multiple independent datasets.",
     "request_schema": "https://www.geospatial-agentic-services.online/schemas/execute_task_request.schema.json",
     "response_schema": "https://www.geospatial-agentic-services.online/schemas/task_response.schema.json",
     "modes": [
@@ -94,7 +95,7 @@
             "source-specific geospatial files"
           ],
           "required": true,
-          "description": "Downloaded or generated geospatial dataset artifact."
+          "description": "Downloaded or generated geospatial dataset artifact. Multi-dataset requests may return multiple primary artifacts in outputs.dataset_paths."
         }
       ]
     },
@@ -129,11 +130,11 @@
   "provenance_and_reproducibility": {
     "provenance": {
       "supported": true,
-      "description": "Includes llm_calls, tool_calls, token usage (input_tokens, output_tokens), duration, and number of artifacts in the response provenance section."
+      "description": "Includes llm_calls, tool_calls, token usage (input_tokens, output_tokens), duration, number of artifacts, and sub-task counts for multi-dataset requests in the response provenance section."
     },
     "reproducibility": {
       "supported": true,
-      "description": "Returns the exact Python script used for download execution in the execution.code.script field, along with environment details and selected data source."
+      "description": "Returns the exact Python script used for download execution in the execution.code.script field, along with environment details and selected data source. Multi-dataset requests concatenate the per-sub-request scripts with sub-request headings."
     },
     "validation": {
       "supported": true,
@@ -145,7 +146,7 @@
       "description": "Allowed roles set to ['all'] via the extension profile. No role-based access control is enforced."
     },
     "operation_policy": {
-      "description": "Python code execution with up to 10 retry attempts. Vector output is normalized to GeoPackage by default unless another supported format is explicitly requested. Data sources are selected based on technical handbooks. Returned artifacts are self-validated and validation results are included in diagnostics.validation."
+      "description": "Python code execution with up to 10 retry attempts per sub-task. Vector output is normalized to GeoPackage by default unless another supported format is explicitly requested. Data sources are selected based on technical handbooks. Returned artifacts are self-validated and validation results are included in diagnostics.validation."
     },
     "review_policy": {
       "description": "output_review_required is set to false. No human-in-the-loop validation is required."
@@ -153,7 +154,7 @@
     "policy_notes": "If the agent is used, please cite the relevant research on geospatial AI agents."
   },
   "extensions": {
-    "description": "This agent supports data retrieval from CDC PLACES, NYT COVID-19, ESRI World Imagery, OpenStreetMap, OpenTopography, OpenWeather, US Census Bureau, USGS Earthquakes, Natural Earth, USDA ERS, and EPA AQS. Each source has a dedicated technical handbook that guides the code generation process.",
+    "description": "This agent supports data retrieval from CDC PLACES, NYT COVID-19, ESRI World Imagery, OpenStreetMap, OpenTopography, OpenWeather, US Census Bureau, USGS Earthquakes, Natural Earth, USDA ERS, and EPA AQS. Each source has a dedicated technical handbook that guides the code generation process. Multi-dataset requests are decomposed into source-specific sub-tasks and returned as a combined artifact set with sub_tasks diagnostics.",
     "data_sources": [
       {
         "source_id": "CDC_PLACES",

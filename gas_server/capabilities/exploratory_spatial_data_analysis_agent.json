@@ -114,8 +114,8 @@
     },
     "credentials": {
       "required": false,
-      "one_of": ["OPENAI_API_KEY", "GIBD_API_KEY"],
-      "description": "Provide a model execution credential to enable LLM-generated ESDA code. Without credentials, the agent still produces a deterministic ESDA report."
+      "one_of": ["none", "OPENAI_API_KEY", "GIBD_API_KEY"],
+      "description": "No API key is required for deterministic ESDA. Provide a model execution credential to enable LLM-generated ESDA code; without credentials, the agent still produces a deterministic ESDA report."
     }
   },
   "conformance": {

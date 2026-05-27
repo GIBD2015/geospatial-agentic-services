@@ -208,6 +208,9 @@ def registry_api_root():
             "agent_detail": f"/registry{API_PATH}/agents/{{registry_id}}",
             "agent_search": f"/registry{API_PATH}/agents/search",
             "servers": f"/registry{API_PATH}/servers",
+            "remote_agents": f"/registry{API_PATH}/remote-agents",
+            "register_server": f"/registry{API_PATH}/servers",
+            "register_selected_agents": f"/registry{API_PATH}/servers/selected-agents",
         },
     )
 
@@ -403,16 +406,21 @@ def gas_register_legacy():
 def gas_list_remote():
     """List all agents advertised by a remote GAS server."""
 
+    legacy_ui_response = "/api/gas/list-remote" in request.path
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or request.args.get("url") or "").strip()
     if not url:
-        return jsonify(ok=False, error="Missing 'url'."), 400
+        if legacy_ui_response:
+            return jsonify(ok=False, error="Missing 'url'."), 400
+        return _error("Missing 'url'.", 400)
 
     base_url = gas_registry._base_url_from_capabilities_url(url)
     try:
         agents = gas_registry.get_capabilities(base_url=base_url)
     except Exception as exc:
-        return jsonify(ok=False, error=f"List failed: {exc}"), 502
+        if legacy_ui_response:
+            return jsonify(ok=False, error=f"List failed: {exc}"), 502
+        return _error(f"List failed: {exc}", 502)
 
     enriched = []
     for agent in agents:
@@ -434,7 +442,9 @@ def gas_list_remote():
         except Exception:
             pass
         enriched.append(item)
-    return jsonify(ok=True, agents=enriched)
+    if legacy_ui_response:
+        return jsonify(ok=True, agents=enriched)
+    return _success(count=len(enriched), agents=enriched)
 
 
 @app.route("/api/gas/register-selected", methods=["POST"])

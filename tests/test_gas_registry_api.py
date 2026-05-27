@@ -100,6 +100,8 @@ def test_registry_api_root_lists_public_endpoints():
     assert payload["status"] == "success"
     assert payload["endpoints"]["agents"] == "/registry/api/agents"
     assert payload["endpoints"]["servers"] == "/registry/api/servers"
+    assert payload["endpoints"]["remote_agents"] == "/registry/api/remote-agents"
+    assert payload["endpoints"]["register_selected_agents"] == "/registry/api/servers/selected-agents"
 
 
 def test_registry_agents_api_lists_registered_agents(monkeypatch):
@@ -213,7 +215,8 @@ def test_registry_internal_remote_agents_api_uses_get(monkeypatch):
     payload = response.get_json()
 
     assert response.status_code == 200
-    assert payload["ok"] is True
+    assert payload["status"] == "success"
+    assert payload["count"] == 2
     assert [agent["name"] for agent in payload["agents"]] == ["mapping_agent", "raster_agent"]
 
 
@@ -225,7 +228,19 @@ def test_registry_internal_remote_agents_api_accepts_trailing_slash(monkeypatch)
     payload = response.get_json()
 
     assert response.status_code == 200
+    assert payload["status"] == "success"
+
+
+def test_registry_legacy_ui_remote_agents_keeps_ok_shape(monkeypatch):
+    client = _registry_client(monkeypatch)
+    _patch_remote_server(monkeypatch)
+
+    response = client.post("/registry/api/gas/list-remote", json={"url": "https://example.test"})
+    payload = response.get_json()
+
+    assert response.status_code == 200
     assert payload["ok"] is True
+    assert "status" not in payload
 
 
 def test_registry_servers_api_lists_registered_servers(monkeypatch):

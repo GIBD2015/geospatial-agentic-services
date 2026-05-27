@@ -151,7 +151,10 @@ Example response shape:
     "agents": "/registry/api/agents",
     "agent_detail": "/registry/api/agents/{registry_id}",
     "agent_search": "/registry/api/agents/search",
-    "servers": "/registry/api/servers"
+    "servers": "/registry/api/servers",
+    "remote_agents": "/registry/api/remote-agents",
+    "register_server": "/registry/api/servers",
+    "register_selected_agents": "/registry/api/servers/selected-agents"
   }
 }
 ```
@@ -274,6 +277,37 @@ Example response shape:
 }
 ```
 
+### Preview Remote Server Agents
+
+Preview all agents advertised by a remote GAS server before registering them:
+
+```text
+GET /registry/api/remote-agents?url=https%3A%2F%2Fyour-gas-server.example
+```
+
+Example success response:
+
+```json
+{
+  "status": "success",
+  "count": 2,
+  "agents": [
+    {
+      "name": "mapping_agent",
+      "describeUrl": "https://your-gas-server.example/?SERVICE=GAS&VERSION=1.0.0&REQUEST=DescribeAgent&agent_id=mapping_agent",
+      "sourceBaseUrl": "https://your-gas-server.example",
+      "displayName": "Mapping Agent",
+      "description": "Creates cartographic map outputs from geospatial datasets.",
+      "version": "1.0.0"
+    }
+  ]
+}
+```
+
+This endpoint does not modify the registry database and does not require an
+admin token. It fetches the remote server's `GetCapabilities` document and, when
+available, each advertised agent's `DescribeAgent` document.
+
 ### Register GAS Servers
 
 These write endpoints update the registry database. Token protection is
@@ -374,6 +408,14 @@ The legacy routes used internally by the web UI keep their UI-oriented
 `ok: true` / `ok: false` response shape for browser compatibility. Public
 developer and AI-agent integrations should use the `/registry/api/...`
 endpoints documented above.
+
+Legacy UI routes include:
+
+- `/registry/api/gas`
+- `/registry/api/gas/search`
+- `/registry/api/gas/list-remote`
+- `/registry/api/gas/register`
+- `/registry/api/gas/register-selected`
 
 ## Register A GAS Server
 

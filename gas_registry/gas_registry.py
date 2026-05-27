@@ -2,8 +2,9 @@
 
 Uses only the Python standard library (no third-party dependencies).
 
-Endpoints follow the OGC-style KVP convention:
-    ?SERVICE=GAS&VERSION=1.0.0&REQUEST=<request>[&name=<agent>]
+The registry fetches OGC-style GAS KVP discovery documents from source GAS
+servers, then stores the advertised DescribeAgent JSON in SQLite for the
+registry Flask API and web UI.
 """
 
 import datetime

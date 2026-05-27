@@ -184,10 +184,7 @@ In a remote notebook or client:
 ```python
 from gas_client import GasClient
 
-client = GasClient(
-    "https://abc123.ngrok-free.app",
-    openai_api_key="YOUR_OPENAI_API_KEY",
-)
+client = GasClient("https://abc123.ngrok-free.app")
 
 print(client.list_agents())
 ```

@@ -375,7 +375,7 @@
             margin-top: 0;
             line-height: 1.28;
         }
-        /* Footer meta (agent_id / base_url / default_model) */
+        /* Footer meta (agent_id / DescribeAgent URL / default_model) */
         .modal-footer-meta {
             margin-top: 24px; padding-top: 16px;
             border-top: 1px solid #e5e5ea;
@@ -1454,9 +1454,10 @@
                 var items = [];
                 var agentId = profile.agent_id || agentEntry.name;
                 var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                var describeUrl = agentEntry.describeUrl || "";
                 if (agentId)             items.push(["Agent ID",      '<code>' + escapeHtml(agentId) + '</code>']);
                 if (sourceServer)        items.push(["GAS Server",     '<a href="' + escapeHtml(sourceServer) + '" target="_blank" rel="noopener">' + escapeHtml(sourceServer) + '</a>']);
-                if (profile.base_url)    items.push(["Base URL",      '<a href="' + escapeHtml(profile.base_url) + '" target="_blank" rel="noopener">' + escapeHtml(profile.base_url) + '</a>']);
+                if (describeUrl)         items.push(["DescribeAgent URL", '<a href="' + escapeHtml(describeUrl) + '" target="_blank" rel="noopener">' + escapeHtml(describeUrl) + '</a>']);
                 if (profile.default_model) items.push(["Default model", '<code>' + escapeHtml(profile.default_model) + '</code>']);
                 if (!items.length) return "";
                 var rows = items.map(function(p) {
@@ -1537,13 +1538,6 @@
                 html += provenanceDetailsHtml(pr);
                 html += conformanceHtml(conformance);
                 html += extensionsHtml(extensions);
-
-                // Footer meta — agent_id, base_url, default_model.
-                if (agentEntry.describeUrl) {
-                    html += '<div class="modal-section">' +
-                        '<a class="modal-link" href="' + escapeHtml(agentEntry.describeUrl) + '" target="_blank" rel="noopener">View full DescribeAgent JSON →</a>' +
-                        '</div>';
-                }
 
                 modalContent.innerHTML = html;
                 modalContent.querySelector(".modal-close").addEventListener("click", closeModal);
@@ -1980,7 +1974,7 @@
                 modalContent.innerHTML =
                     '<button class="modal-close" type="button" aria-label="Close">×</button>' +
                     '<h2 class="modal-title">Register GAS Server</h2>' +
-                    '<p class="modal-meta">Enter the base URL of a GAS server. Click <strong>Register</strong> to register all agents from that server into this registry. If this server has been registered before, the latest GetCapabilities and DescribeAgent information will update the existing agent records. To register only selected agents, click <strong>List Agents</strong>, choose the agents you want, and then register the selected items.</p>' +
+                    '<p class="modal-meta">Enter the base URL of a GAS server. Click <strong>Register</strong> to register all agent profiles from that server into this registry. If this server has been registered before, the latest GetCapabilities and DescribeAgent information will update the existing agent profiles. To register only selected profiles, click <strong>List Agents</strong>, choose the profiles you want, and then register the selected items.</p>' +
                     '<form id="register-form" novalidate>' +
                         '<div class="form-row">' +
                             '<label class="form-label" for="register-url-input">GAS Server URL</label>' +
@@ -2054,7 +2048,7 @@
             function renderRemoteAgentList(agents) {
                 var box = document.getElementById("register-agent-list");
                 if (!agents.length) {
-                    box.innerHTML = '<p class="form-hint" style="margin-top:14px;">No agents found at that URL.</p>';
+                    box.innerHTML = '<p class="form-hint" style="margin-top:14px;">No agent profiles found at that URL.</p>';
                     return;
                 }
                 var rows = agents.map(function(a) {
@@ -2131,7 +2125,7 @@
                         var agents = (body && body.agents) || [];
                         renderRemoteAgentList(agents);
                         statusBox.className = "form-status success";
-                        statusBox.textContent = "Found " + agents.length + " agent" +
+                        statusBox.textContent = "Found " + agents.length + " agent profile" +
                             (agents.length === 1 ? "" : "s") +
                             (agents.length ? " — review and uncheck any you don't want, then click Register." : ".");
                     })
@@ -2158,7 +2152,7 @@
                 var selected = getSelectedRemoteNames();
                 if (selected !== null && selected.length === 0) {
                     statusBox.className = "form-status error";
-                    statusBox.textContent = "Select at least one agent to register.";
+                    statusBox.textContent = "Select at least one agent profile to register.";
                     return;
                 }
 
@@ -2169,8 +2163,8 @@
                 if (tokenInput) tokenInput.disabled = true;
 
                 statusBox.textContent = selected
-                    ? "Registering " + selected.length + " selected agent" + (selected.length === 1 ? "" : "s") + "…"
-                    : "Registering agents into the database…";
+                    ? "Registering " + selected.length + " selected agent profile" + (selected.length === 1 ? "" : "s") + "..."
+                    : "Registering agent profiles into the database...";
 
                 var registerPromise = selected
                     ? registerSelected(url, selected)
@@ -2178,8 +2172,8 @@
 
                 registerPromise
                     .then(function(res) {
-                        // Agents are now in the DB; refresh the catalog from
-                        // our local DB-backed capabilities to show new cards.
+                        // Agent profiles are now in the DB; refresh the catalog from
+                        // our local DB-backed capabilities to show new profiles.
                         return fetchJson(CAPABILITIES_URL)
                             .then(appendAgentsFromCapabilities)
                             .then(function(view) { return { res: res, view: view }; });
@@ -2189,12 +2183,12 @@
                         var added = (o.view && o.view.added) || 0;
                         statusBox.className = "form-status success";
                         if (registered > 0) {
-                            statusBox.textContent = "Registered " + registered + " agent" + (registered === 1 ? "" : "s") +
-                                " into the database" +
-                                (added > 0 ? " — " + added + " new card" + (added === 1 ? "" : "s") + " added." :
-                                             " (already shown in catalog).");
+                            statusBox.textContent = "Updated " + registered + " agent profile" + (registered === 1 ? "" : "s") +
+                                " in the registry" +
+                                (added > 0 ? " — " + added + " new profile" + (added === 1 ? "" : "s") + " now shown in the catalog." :
+                                             " (all updated profiles were already shown in the catalog).");
                         } else {
-                            statusBox.textContent = "No agents found at that URL.";
+                            statusBox.textContent = "No agent profiles found at that URL.";
                         }
                         // Leave the modal open so the user can read the
                         // result; they dismiss it via Close / Esc / overlay.

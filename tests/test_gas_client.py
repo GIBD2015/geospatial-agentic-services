@@ -191,7 +191,7 @@ def test_print_task_summary_includes_usage_artifacts_and_diagnostics(capsys):
 def test_build_execute_task_request_adds_credentials_datasets_and_artifact_delivery():
     client = GasClient(
         "http://127.0.0.1:4042",
-        openai_api_key="openai-key",
+        default_credentials={"OPENAI_API_KEY": "openai-key"},
         artifact_delivery="URL",
         load_capabilities=False,
     )
@@ -217,6 +217,36 @@ def test_build_execute_task_request_adds_credentials_datasets_and_artifact_deliv
     assert payload["parameters"]["requested_skill"] == "map_generation"
 
 
+def test_request_credentials_override_client_default_credentials():
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={
+            "OPENAI_API_KEY": "client-openai-key",
+            "GIBD_API_KEY": "client-gibd-key",
+            "GEMINI_API_KEY": "client-gemini-key",
+            "CUSTOM_PROVIDER_KEY": "client-custom-key",
+        },
+        load_capabilities=False,
+    )
+
+    payload = client.build_execute_task_request(
+        "Run with request-specific credentials",
+        credentials={
+            "OPENAI_API_KEY": "request-openai-key",
+            "GEMINI_API_KEY": "request-gemini-key",
+            "source_credentials": {
+                "OpenTopography": {"key": "source-key"},
+            },
+        },
+    )
+
+    assert payload["credentials"]["OPENAI_API_KEY"] == "request-openai-key"
+    assert payload["credentials"]["GIBD_API_KEY"] == "client-gibd-key"
+    assert payload["credentials"]["GEMINI_API_KEY"] == "request-gemini-key"
+    assert payload["credentials"]["CUSTOM_PROVIDER_KEY"] == "client-custom-key"
+    assert payload["credentials"]["source_credentials"]["OpenTopography"]["key"] == "source-key"
+
+
 def test_get_capabilities_and_list_agents_use_advertised_response():
     session = FakeSession(
         [
@@ -229,7 +259,7 @@ def test_get_capabilities_and_list_agents_use_advertised_response():
 
     assert client.list_agents() == ["mapping_agent", "spatial_statistics_agent"]
     assert session.calls[0][1] == (
-        "http://127.0.0.1:4042/?SERVICE=GAS&REQUEST=GetCapabilities"
+        "http://127.0.0.1:4042/?SERVICE=GAS&VERSION=1.0.0&REQUEST=GetCapabilities"
     )
 
 
@@ -270,7 +300,11 @@ def test_execute_task_uses_capabilities_execute_task_endpoint():
             ),
         ]
     )
-    client = GasClient("http://127.0.0.1:4042", gibd_api_key="gibd-key", session=session)
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={"GIBD_API_KEY": "gibd-key"},
+        session=session,
+    )
 
     result = client.execute_task("spatial_statistics_agent", "Run Moran's I")
 
@@ -300,7 +334,11 @@ def test_execute_task_request_sends_canonical_json_body_unchanged():
             FakeResponse(payload={"task": {"id": "task-1", "status": "successful"}}),
         ]
     )
-    client = GasClient("http://127.0.0.1:4042", openai_api_key="client-key", session=session)
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={"OPENAI_API_KEY": "client-key"},
+        session=session,
+    )
 
     result = client.execute_task_request("spatial_statistics_agent", request_body)
 
@@ -372,7 +410,11 @@ def test_execute_task_async_mode_returns_task_id_and_wait_polls_until_terminal(m
             FakeResponse(payload={"task": {"id": "task-1", "status": "successful"}}),
         ]
     )
-    client = GasClient("http://127.0.0.1:4042", openai_api_key="test-key", session=session)
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={"OPENAI_API_KEY": "test-key"},
+        session=session,
+    )
     monkeypatch.setattr("gas_client.client.time.sleep", lambda seconds: None)
 
     accepted = client.execute_task("mapping_agent", "Create a map", mode="async")
@@ -395,7 +437,11 @@ def test_async_execute_task_can_be_combined_with_wait_for_task(monkeypatch):
             FakeResponse(payload={"task": {"id": "task-1", "status": "successful"}}),
         ]
     )
-    client = GasClient("http://127.0.0.1:4042", openai_api_key="test-key", session=session)
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={"OPENAI_API_KEY": "test-key"},
+        session=session,
+    )
     monkeypatch.setattr("gas_client.client.time.sleep", lambda seconds: None)
 
     accepted = client.execute_task("mapping_agent", "Create a map", mode="async")
@@ -418,7 +464,11 @@ def test_execute_task_stream_mode_yields_json_events():
             FakeResponse(payload=describe_payload("web_mapping_app_agent")),
         ]
     )
-    client = GasClient("http://127.0.0.1:4042", openai_api_key="test-key", session=session)
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={"OPENAI_API_KEY": "test-key"},
+        session=session,
+    )
 
     events = list(client.execute_task("web_mapping_app_agent", "Create a web mapping app", mode="stream"))
 
@@ -442,7 +492,11 @@ def test_bound_agent_client_stream_mode_uses_execute_task_only():
             FakeResponse(payload=describe_payload("web_mapping_app_agent")),
         ]
     )
-    client = GasClient("http://127.0.0.1:4042", openai_api_key="test-key", session=session)
+    client = GasClient(
+        "http://127.0.0.1:4042",
+        default_credentials={"OPENAI_API_KEY": "test-key"},
+        session=session,
+    )
     events = []
 
     for event in client.agent("web_mapping_app_agent").execute_task("Create a web mapping app", mode="stream"):

@@ -176,6 +176,8 @@ For example:
 ```text
 gas_server/agents/web_mapping_app_agent.py
 gas_server/agents/spatial_statistics_agent.py
+gas_server/agents/spatial_analysis_agent.py
+gas_server/agents/exploratory_spatial_data_analysis_agent.py
 gas_server/agents/geospatial_data_retrieval_agent.py
 ```
 
@@ -225,6 +227,8 @@ This folder contains the public service descriptions.
 gas_server/capabilities/capabilities.json
 gas_server/capabilities/web_mapping_app_agent.json
 gas_server/capabilities/spatial_statistics_agent.json
+gas_server/capabilities/spatial_analysis_agent.json
+gas_server/capabilities/exploratory_spatial_data_analysis_agent.json
 ```
 
 `capabilities.json` is the server-level capability document. It helps
@@ -353,15 +357,17 @@ stores agent descriptions in SQLite, and presents them as searchable cards or
 list rows. It supports discovery across multiple GAS servers without executing
 agent tasks itself.
 
-The registry exposes its own discovery-style API under:
+The registry exposes its public resource-style API under:
 
 ```text
-/registry/api/gas
+/registry/api
 ```
 
-It also links users back to the original `DescribeAgent` document on the source
-GAS server. See [gas_registry.md](gas_registry.md) for run commands and API
-examples.
+The browser UI also keeps legacy `/registry/api/gas/...` routes for UI
+compatibility. Public developer and AI-agent integrations should use the
+`/registry/api/...` endpoints documented in [gas_registry.md](gas_registry.md).
+The registry also links users back to the original `DescribeAgent` document on
+the source GAS server.
 
 ### `Data` and `Output`
 
@@ -525,6 +531,13 @@ or:
   }
 }
 ```
+
+The reproducibility section also contains `input_artifacts` and
+`output_artifacts`, but these are lightweight provenance references. They are
+intended to record which files were consumed and produced for audit, rerun, and
+workflow-chaining use cases. They are not a second artifact delivery channel;
+download URLs or encoded base64 payloads are delivered through
+`outputs.artifacts`.
 
 ## Model And Credential Design
 

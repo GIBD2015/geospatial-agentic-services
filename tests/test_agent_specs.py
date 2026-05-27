@@ -15,11 +15,13 @@ from gas_server.agents.vector_analysis_agent import VectorAnalysisAgent
 
 
 REQUIRED_INPUT_DATASET_AGENTS = {
+    "exploratory_spatial_data_analysis_agent",
     "geospatial_data_inspection_agent",
     "web_mapping_app_agent",
     "mapping_agent",
     "map_projection_agent",
     "raster_agent",
+    "spatial_analysis_agent",
     "spatial_statistics_agent",
     "vector_analysis_agent",
 }

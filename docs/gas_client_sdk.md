@@ -47,9 +47,20 @@ from gas_client import (
 ## Create A Client
 
 ```python
+client = GasClient("https://your-gas-server.com")
+```
+
+You can also configure provider-neutral default credentials when the same key
+should be sent to many calls. Before choosing the credential field name, inspect
+the selected agent's `DescribeAgent` JSON and use the key name that agent
+advertises.
+
+```python
 client = GasClient(
     "https://your-gas-server.com",
-    openai_api_key="YOUR_OPENAI_API_KEY",
+    default_credentials={
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
+    },
 )
 ```
 
@@ -58,16 +69,23 @@ Common constructor arguments:
 | Argument | Purpose |
 |---|---|
 | `server_url` | Root URL of the GAS server, such as `http://127.0.0.1:4042`. |
-| `openai_api_key` | Optional default OpenAI key sent with task requests. |
-| `gibd_api_key` | Optional default GIBD key sent with task requests. |
+| `default_credentials` | Optional dictionary of default credential keys to send with task requests, such as `{"GEMINI_API_KEY": "..."}` or any key advertised by a server/agent. |
 | `artifact_delivery` | Default artifact delivery mode: `URL` or `Encoded`. |
 | `timeout` | Default HTTP timeout in seconds. |
 | `session` | Optional custom `requests.Session` for advanced users or tests. |
 | `load_capabilities` | Whether to fetch `GetCapabilities` during initialization. |
 
-Credential requirements are service-specific. Always inspect the selected
-agent's `DescribeAgent` document to see whether it needs an LLM key, a
-data-source key, both, or no credential.
+Credential requirements are service-specific. Users and orchestrating agents
+should always inspect the selected agent's `DescribeAgent` document to see
+whether it needs an LLM key, a data-source key, both, or no credential, and to
+identify the exact credential field names to send.
+
+You can provide no key when creating the client and pass credentials only to the
+agent calls that need them. If a server or agent uses another provider, such as
+Gemini, pass that key through `credentials` or through `default_credentials`.
+The SDK does not interpret provider-specific names; it forwards the credential
+fields expected by the selected GAS server. Request-level `credentials` override
+client defaults for that call.
 
 ## Discovery
 
@@ -156,6 +174,7 @@ GAS supports three task execution modes:
 result = data_agent.execute_task(
     "Download Pennsylvania county boundaries from Census Bureau.",
     mode="sync",
+    credentials={"OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"},
 )
 
 client.print_task_summary(result)
@@ -208,6 +227,9 @@ request_body = client.build_execute_task_request(
         "https://example.com/counties.geojson",
     ],
     artifact_delivery="URL",
+    # Optional: include credentials here only when this call needs a key
+    # and the client was not created with suitable default credentials.
+    # Credential names are server- and agent-dependent.
     credentials={
         "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY",
     },
@@ -265,6 +287,12 @@ result = client.agent("vector_analysis_agent").execute_task(
 )
 ```
 
+`build_execute_task_request(...)` applies the same credential-default behavior
+as `execute_task(...)`: client-level credentials are included when present, and
+keys in the `credentials` argument take precedence. Credential field names are
+server- and agent-dependent. `execute_task_request(...)` sends a fully built
+request body unchanged.
+
 ## Artifact Delivery
 
 `artifact_delivery` controls how output artifacts are returned:
@@ -285,7 +313,16 @@ urls = client.get_artifact_urls(result)
 ```
 
 Each artifact is part of the standard GAS task response under
-`outputs.artifacts`.
+`outputs.artifacts`. A single task can return multiple artifacts; for example,
+`geospatial_data_retrieval_agent` may return several URLs when one request asks
+for multiple independent datasets.
+
+The `reproducibility.input_artifacts` and
+`reproducibility.output_artifacts` fields are provenance references, not
+artifact delivery fields. They identify the input and output files involved in
+the task for audit or rerun workflows. Large payloads, including base64 encoded
+artifact data, are returned only through `outputs.artifacts` according to the
+requested `artifact_delivery` mode.
 
 ## Display Helpers
 
@@ -324,10 +361,7 @@ A common notebook pattern is:
 ```python
 from gas_client import GasClient
 
-client = GasClient(
-    "http://127.0.0.1:4042",
-    openai_api_key="YOUR_OPENAI_API_KEY",
-)
+client = GasClient("http://127.0.0.1:4042")
 
 agent = client.agent("geospatial_data_retrieval_agent")
 
@@ -335,6 +369,7 @@ result = None
 for event in agent.execute_task(
     "Download Pennsylvania county boundaries from Census Bureau.",
     mode="stream",
+    credentials={"OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"},
 ):
     client.print_stream_event(event)
     if event.get("event") == "task_result":
@@ -366,3 +401,7 @@ map_result = client.agent("web_mapping_app_agent").execute_task(
 This is the intended GAS pattern: each agent is an independent service, and
 external clients, notebooks, workflow systems, or AI orchestrators coordinate
 service chains.
+
+For multi-dataset retrieval requests, collect all URLs from
+`client.get_artifact_urls(data_result)` and pass the subset needed by each
+downstream service.

@@ -416,6 +416,13 @@ Top-level sections include:
 - `diagnostics`: errors, warnings, validation results, assumptions, and
   limitations.
 
+`reproducibility.input_artifacts` and `reproducibility.output_artifacts` are
+lightweight provenance references. Actual artifact delivery belongs in
+`outputs.artifacts`, including downloadable URLs or encoded file data when the
+caller requests encoded artifacts. Reproducibility artifact references should
+therefore identify the artifact and its role, but should not repeat large
+encoded payloads.
+
 Task status values are:
 
 ```text
@@ -531,8 +538,23 @@ Example successful task response:
     "code_available": true,
     "environment_available": true,
     "parameters_available": true,
-    "input_artifacts": ["counties.gpkg", "obesity.csv"],
-    "output_artifacts": ["county_obesity_join.gpkg"],
+    "input_artifacts": [
+      {
+        "name": "counties.gpkg",
+        "role": "input_dataset"
+      },
+      {
+        "name": "obesity.csv",
+        "role": "input_dataset"
+      }
+    ],
+    "output_artifacts": [
+      {
+        "name": "county_obesity_join.gpkg",
+        "role": "primary_output",
+        "format": "GPKG"
+      }
+    ],
     "parameters": {},
     "stochasticity": {
       "used": false,

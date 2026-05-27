@@ -86,6 +86,11 @@
       ]
     },
     "parameters": {
+      "model": {
+        "required": false,
+        "default": "gpt-5.2",
+        "description": "Optional model override. If omitted, the agent uses its default model. Stage-specific graph_model, operation_model, and assembly_model parameters can override individual stages."
+      },
       "workflow_graph_path": {
         "required": false,
         "description": "Explicit path to a pre-built GraphML workflow file. When provided, the workflow generation stage is skipped and this graph is used directly."

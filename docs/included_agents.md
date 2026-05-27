@@ -3,8 +3,9 @@
 This GAS server includes working geospatial agents that also serve as concrete
 implementation examples for developers. They show different ways to build GAS
 services: deterministic geospatial workflows, model-assisted code execution,
-data retrieval, data inspection, workflow planning, mapping, raster processing,
-vector analysis, and spatial statistics.
+data retrieval, data inspection, exploratory spatial data analysis, workflow
+planning, mapping, raster processing, spatial analysis, vector analysis, and
+spatial statistics.
 
 When adding a new agent, start by finding the included agent that is closest to
 your intended design. Then inspect its implementation file, service wrapper,
@@ -14,12 +15,15 @@ and capability document.
 
 | Agent ID | Agent Name | Main Purpose | Implementation Pattern | Inputs | Primary Outputs |
 |---|---|---|---|---|---|
-| `geospatial_data_retrieval_agent` | Geospatial Data Retrieval Agent | Retrieves geospatial datasets from supported external sources. | Model-assisted source selection and code generation using data-source handbooks. | Optional input datasets. | GeoPackage, GeoJSON, GeoTIFF, Shapefile, CSV, or source-specific files. |
+| `geospatial_data_retrieval_agent` | Geospatial Data Retrieval Agent | Retrieves one or more geospatial datasets from supported external sources. | Model-assisted request decomposition, source selection, and code generation using data-source handbooks. | Optional input datasets. | One or more GeoPackage, GeoJSON, GeoTIFF, Shapefile, CSV, or source-specific files. |
+| `usgs_earthquake_agent` | USGS Earthquake Agent | Retrieves, maps, summarizes, monitors, and reports earthquake activity from USGS catalog and real-time feeds. | Deterministic USGS/geospatial tools with optional LLM-assisted tool planning. | Optional input datasets. | Earthquake datasets, event tables, maps, grid summaries, buffers, alert summaries, and reports. |
 | `pasda_agent` | PASDA Discovery Agent | Finds and downloads datasets from PASDA. | Repository-specific discovery workflow with model-assisted search and packaging. | Optional input datasets. | GeoPackage, GeoJSON, or source-specific PASDA files. |
 | `geospatial_data_inspection_agent` | Geospatial Data Inspection Agent | Checks vector, raster, and tabular datasets for quality and workflow readiness. | Deterministic inspection plus optional LLM-assisted interpretation. | Required input datasets. | TXT and HTML inspection reports. |
+| `exploratory_spatial_data_analysis_agent` | Exploratory Spatial Data Analysis Agent | Profiles tabular and geospatial datasets to summarize distributions, missingness, correlations, categories, geometry, and lightweight spatial patterns. | LLM-generated ESDA scripts with deterministic pandas/geopandas/matplotlib fallback. | Required input datasets. | HTML and TXT ESDA reports plus chart images. |
 | `geospatial_workflow_planning_agent` | Geospatial Workflow Planning Agent | Discovers GAS capabilities and plans client-side service chains. | Capability-aware LLM planning with JSON, Markdown, code, notebook, and graph artifacts. | Optional input datasets and optional GAS GetCapabilities URLs. | Workflow plan JSON, Markdown, optional Python, notebook, and HTML graph. |
 | `vector_analysis_agent` | Vector Analysis Agent | Performs vector joins, buffers, clips, intersections, filtering, and aggregation. | Deterministic fast paths for common operations plus model-backed fallback. | Required input datasets. | GeoPackage, GeoJSON, or CSV. |
 | `raster_agent` | Raster Agent | Performs raster and mixed raster-vector analysis. | Code-driven workflow with persistent runtime registry. | Required input datasets. | GeoTIFF, GeoPackage, GeoJSON, or CSV. |
+| `spatial_analysis_agent` | Spatial Analysis Agent | Builds and executes an end-to-end geoprocessing workflow from input datasets and a natural-language task. | LLM-designed NetworkX workflow DAG, per-operation code generation, assembly, and sandboxed execution. | Required input datasets. | GeoPackage, GeoJSON, CSV, PNG, or HTML workflow results. |
 | `map_projection_agent` | Map Projection Agent | Reprojects geospatial datasets between coordinate reference systems. | Deterministic local CRS selection and reprojection with pyproj/geopandas. | Required input datasets. | GeoPackage, GeoJSON, GeoTIFF, or Shapefile. |
 | `mapping_agent` | Mapping Agent | Creates static maps and charts from prepared datasets. | Visualization workflow using geospatial plotting libraries. | Required input datasets. | PNG maps or charts. |
 | `web_mapping_app_agent` | Web Mapping App Agent | Creates browser-ready web mapping apps from vector, raster, or tabular geospatial data. | LLM-assisted app design and code generation with deterministic fallback behavior. | Required input datasets. | HTML web mapping applications. |
@@ -29,14 +33,18 @@ and capability document.
 
 ### Geospatial Data Retrieval Agent
 
-`geospatial_data_retrieval_agent` interprets a data request, selects a supported
-data source, uses source-specific handbook guidance, generates download code,
-and packages the retrieved data.
+`geospatial_data_retrieval_agent` interprets a data request, selects supported
+data sources, uses source-specific handbook guidance, generates download code,
+and packages the retrieved data. When a request asks for multiple independent
+datasets, the agent decomposes it into sub-requests, downloads each dataset,
+and returns all artifacts together with per-sub-task diagnostics.
 
 Useful developer pattern:
 
 - Build a domain-specific knowledge base for source selection.
 - Use handbooks to constrain LLM-generated code.
+- Decompose multi-dataset requests while preserving one self-contained request
+  per output dataset.
 - Normalize downloaded outputs into standard GAS artifacts.
 - Document source-specific credentials in `extensions`.
 
@@ -46,6 +54,30 @@ Files:
 - `gas_server/services/geospatial_data_retrieval_agent_service.py`
 - `gas_server/capabilities/geospatial_data_retrieval_agent.json`
 - `gas_server/agents/geospatial_data_retrieval_handbooks/`
+
+### USGS Earthquake Agent
+
+`usgs_earthquake_agent` is a focused domain agent for USGS earthquake data. It
+queries the USGS Earthquake Catalog or real-time feeds, exports event datasets,
+creates static PNG and interactive HTML basemap maps with magnitude-scaled or
+depth-colored symbols, builds animation-ready GeoJSON, generates grid summaries
+and impact buffers, prepares alert-ready summaries, and writes Markdown or HTML
+activity reports.
+
+Useful developer pattern:
+
+- Keep the data-source API and geospatial operations deterministic.
+- Let the LLM, when credentials are supplied, select among trusted tools rather
+  than generate arbitrary code.
+- Return reusable data artifacts even when the user asks primarily for a map,
+  brief, alert, or report.
+- Include methods, query parameters, retrieval time, and limitations in reports.
+
+Files:
+
+- `gas_server/agents/usgs_earthquake_agent.py`
+- `gas_server/services/usgs_earthquake_agent_service.py`
+- `gas_server/capabilities/usgs_earthquake_agent.json`
 
 ### PASDA Discovery Agent
 
@@ -82,6 +114,29 @@ Files:
 - `gas_server/agents/geospatial_data_inspection_agent.py`
 - `gas_server/services/geospatial_data_inspection_agent_service.py`
 - `gas_server/capabilities/geospatial_data_inspection_agent.json`
+
+### Exploratory Spatial Data Analysis Agent
+
+`exploratory_spatial_data_analysis_agent` profiles tabular and geospatial
+datasets to summarize what is in the data and how it is arranged in space. It
+returns polished HTML and plain-text reports with descriptive statistics,
+missingness summaries, distribution charts, correlation views, categorical
+breakdowns, geometry diagnostics, classified choropleths, point-density maps,
+and a quick global spatial-autocorrelation check when dependencies are
+available.
+
+Useful developer pattern:
+
+- Generate tailored analysis code from a dataset profile and task focus.
+- Keep ESDA descriptive and exploratory rather than formal inference.
+- Provide deterministic fallback reports when model credentials or generated
+  code are unavailable.
+
+Files:
+
+- `gas_server/agents/exploratory_spatial_data_analysis_agent.py`
+- `gas_server/services/exploratory_spatial_data_analysis_agent_service.py`
+- `gas_server/capabilities/exploratory_spatial_data_analysis_agent.json`
 
 ### Geospatial Workflow Planning Agent
 
@@ -141,6 +196,26 @@ Files:
 - `gas_server/agents/raster_agent.py`
 - `gas_server/services/raster_agent_service.py`
 - `gas_server/capabilities/raster_agent.json`
+
+### Spatial Analysis Agent
+
+`spatial_analysis_agent` runs an end-to-end LLM-driven geoprocessing pipeline.
+It audits input datasets into a data registry, asks an LLM to design a NetworkX
+workflow DAG, generates operation-node code, assembles the operations into one
+program, and executes the program in a per-task working directory. A caller may
+also provide a pre-built workflow graph or data registry to skip those stages.
+
+Useful developer pattern:
+
+- Convert a broad spatial analysis request into an explicit workflow graph.
+- Generate operation code with ancestor and descendant context.
+- Persist final results separately from intermediate outputs.
+
+Files:
+
+- `gas_server/agents/spatial_analysis_agent.py`
+- `gas_server/services/spatial_analysis_agent_service.py`
+- `gas_server/capabilities/spatial_analysis_agent.json`
 
 ### Map Projection Agent
 
@@ -227,8 +302,11 @@ Files:
 Use these examples as starting points:
 
 - Data retrieval from external sources: `geospatial_data_retrieval_agent`
+- Focused USGS earthquake retrieval, mapping, alerts, and reports: `usgs_earthquake_agent`
 - Repository-specific search and download: `pasda_agent`
 - Input quality checks and workflow readiness: `geospatial_data_inspection_agent`
+- Exploratory descriptive analysis and charts: `exploratory_spatial_data_analysis_agent`
+- End-to-end LLM-designed spatial workflows: `spatial_analysis_agent`
 - Deterministic vector operations: `vector_analysis_agent`
 - Raster or mixed raster-vector analysis: `raster_agent`
 - CRS transformation: `map_projection_agent`

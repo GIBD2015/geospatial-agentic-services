@@ -1,0 +1,319 @@
+{
+  "$schema": "https://www.geospatial-agentic-services.online/schemas/describe_agent.schema.json",
+  "profile": {
+    "agent_id": "usgs_earthquake_agent",
+    "name": "USGS Earthquake Agent",
+    "description": "A domain-specific earthquake agent for retrieving, filtering, mapping, summarizing, monitoring, and reporting earthquake activity from the USGS Earthquake Catalog and real-time feeds. The agent uses deterministic geospatial tools for data processing and can optionally use an LLM to plan tool chains from natural-language requests.",
+    "version": "1.0.0",
+    "base_url": "https://www.geospatial-agentic-services.online/agents/usgs_earthquake_agent",
+    "last_updated": "2026-05-26",
+    "provider": {
+      "name": "Geoinformation and Big Data Research Lab (GIBD)",
+      "website": "https://giscience.psu.edu",
+      "contacts": [
+        {
+          "name": "Zhenlong Li",
+          "email": "zhenlong@psu.edu"
+        }
+      ]
+    },
+    "default_model": "gpt-5.2"
+  },
+  "keywords": [
+    "USGS",
+    "earthquake",
+    "seismic activity",
+    "monitoring",
+    "alerting",
+    "GeoJSON",
+    "earthquake map",
+    "seismic report"
+  ],
+  "skills": [
+    {
+      "skill_id": "retrieve_and_export_earthquake_events",
+      "name": "Retrieve And Export Earthquake Events",
+      "description": "Queries the USGS Earthquake Catalog or real-time GeoJSON feeds by time range, magnitude, depth, bounding box, radius, alert level, event type, and common named regions, then saves the resulting events as GeoJSON, GeoPackage, CSV, or Parquet artifacts in the standard GAS response.",
+      "constraints": {
+        "spatial": "Global where USGS catalog coverage is available. Built-in natural-language region resolution is conservative; explicit bounding boxes or radius queries are recommended for precise areas.",
+        "temporal": "USGS catalog and feed availability. Recent events may be revised after initial publication.",
+        "other": [
+          "No USGS API key is required.",
+          "The agent uses deterministic requests to USGS endpoints.",
+          "GeoJSON is the default output format.",
+          "CSV outputs omit the geometry column but include longitude and latitude.",
+          "Optional LLM planning is used only when a model credential is supplied."
+        ]
+      }
+    },
+    {
+      "skill_id": "map_earthquake_activity",
+      "name": "Map Earthquake Activity",
+      "description": "Generates epicenter maps with magnitude-scaled symbols and either magnitude or depth coloring. Map requests return both a static PNG and an interactive HTML map with selectable basemaps. The agent can also create time-animation-ready GeoJSON.",
+      "constraints": {
+        "other": [
+          "Static maps are PNG artifacts.",
+          "Interactive maps are HTML artifacts with Leaflet/Folium basemap layers.",
+          "Animation-ready GeoJSON includes timestamp and style fields for downstream web mapping tools."
+        ]
+      }
+    },
+    {
+      "skill_id": "summarize_earthquake_activity",
+      "name": "Summarize Earthquake Activity",
+      "description": "Computes event counts, top events, magnitude and depth distributions, tsunami flags, alert counts, and optional grid summary layers.",
+      "constraints": {
+        "other": [
+          "Grid summary layers are generated in geographic degrees by default.",
+          "Top-events ranking prioritizes magnitude and significance."
+        ]
+      }
+    },
+    {
+      "skill_id": "analyze_earthquake_patterns",
+      "name": "Analyze Earthquake Patterns",
+      "description": "Supports impact buffers, simple cluster detection, and aftershock or swarm screening outputs that can be passed to other GAS analysis agents.",
+      "constraints": {
+        "other": [
+          "Cluster detection is screening-level and should not be treated as formal seismological attribution.",
+          "Impact buffers are proximity screening artifacts, not shaking intensity models."
+        ]
+      }
+    },
+    {
+      "skill_id": "generate_alert_ready_summary",
+      "name": "Generate Alert-Ready Summary",
+      "description": "Runs one-time latest/significant-event checks, compares events against user thresholds, and writes concise alert-ready summaries such as M5+ within 250 km of a named place.",
+      "constraints": {
+        "other": [
+          "This agent prepares summaries for situational awareness and automation workflows; it does not send external notifications by itself.",
+          "Future daily or hourly digest automations can call this agent through GAS task scheduling."
+        ]
+      }
+    },
+    {
+      "skill_id": "generate_earthquake_report",
+      "name": "Generate Earthquake Report",
+      "description": "Creates Markdown and HTML earthquake activity reports with event tables, top-events sections, maps, charts, methods/provenance, and limitations.",
+      "constraints": {
+        "other": [
+          "Reports include USGS endpoint, query parameters, and retrieval time.",
+          "Reports state limitations including catalog latency, event revisions, magnitude uncertainty, and completeness limits."
+        ]
+      }
+    }
+  ],
+  "execute_task": {
+    "operation_id": "execute_task",
+    "name": "ExecuteTask",
+    "description": "Submits a natural-language USGS earthquake task to the agent. The task.mode field controls sync, async, or stream execution. The agent can retrieve events, export datasets, make maps, create summaries, generate reports, and produce monitoring/alert-ready text.",
+    "request_schema": "https://www.geospatial-agentic-services.online/schemas/execute_task_request.schema.json",
+    "response_schema": "https://www.geospatial-agentic-services.online/schemas/task_response.schema.json",
+    "modes": [
+      "sync",
+      "async",
+      "stream"
+    ],
+    "task": {
+      "instructions": {
+        "required": true,
+        "description": "Natural-language earthquake task instructions such as 'Find M5+ earthquakes within 250 km of Los Angeles today and create an alert-ready summary.'"
+      }
+    },
+    "inputs": {
+      "input_datasets": {
+        "required": false,
+        "description": "Optional supporting polygon datasets for future regional joins or downstream workflows. Most USGS earthquake requests do not require input datasets.",
+        "supported_item_types": [
+          "URL",
+          "server_path",
+          "encoded_file_object"
+        ]
+      }
+    },
+    "outputs": {
+      "artifact_delivery": {
+        "required": false,
+        "default": "URL",
+        "allowed_values": [
+          "URL",
+          "Encoded"
+        ],
+        "description": "How generated artifacts are delivered in the standard response: 'URL' (default) or 'Encoded'."
+      },
+      "primary_artifacts": [
+        {
+          "type": "dataset",
+          "formats": [
+            "GeoJSON",
+            "GeoPackage",
+            "CSV",
+            "Parquet"
+          ],
+          "required": true,
+          "description": "Earthquake event dataset containing event id, time, place, magnitude, depth, coordinates, significance, felt reports, alert, tsunami flag, USGS URL, and geometry when spatial output is used."
+        },
+        {
+          "type": "report",
+          "formats": [
+            "Markdown",
+            "HTML"
+          ],
+          "required": false,
+          "description": "Earthquake activity report with summary, event table, top events, maps/charts, provenance, and limitations."
+        },
+        {
+          "type": "map",
+          "formats": [
+            "PNG",
+            "HTML",
+            "GeoJSON"
+          ],
+          "required": false,
+          "description": "Static PNG and interactive HTML basemap maps with magnitude-scaled or depth-colored epicenter symbols, animation-ready GeoJSON, grid summaries, and impact buffers."
+        }
+      ]
+    },
+    "parameters": {
+      "model": {
+        "required": false,
+        "default": "gpt-5.2",
+        "description": "Optional model override used only for LLM-assisted planning when a model credential is supplied."
+      },
+      "starttime": {
+        "required": false,
+        "description": "USGS catalog start time, for example 2026-05-01."
+      },
+      "endtime": {
+        "required": false,
+        "description": "USGS catalog end time."
+      },
+      "minmagnitude": {
+        "required": false,
+        "description": "Minimum earthquake magnitude."
+      },
+      "maxdepth": {
+        "required": false,
+        "description": "Maximum event depth in kilometers."
+      },
+      "bbox": {
+        "required": false,
+        "description": "Bounding box can be supplied through explicit minlongitude, minlatitude, maxlongitude, and maxlatitude parameters."
+      },
+      "output_format": {
+        "required": false,
+        "default": "geojson",
+        "allowed_values": [
+          "geojson",
+          "gpkg",
+          "csv",
+          "parquet"
+        ],
+        "description": "Primary earthquake dataset artifact format."
+      },
+      "feed_period": {
+        "required": false,
+        "allowed_values": [
+          "hour",
+          "day",
+          "week",
+          "month"
+        ],
+        "description": "Real-time USGS feed period for latest or monitoring requests."
+      },
+      "feed_magnitude": {
+        "required": false,
+        "allowed_values": [
+          "significant",
+          "all",
+          "4.5",
+          "2.5",
+          "1.0"
+        ],
+        "description": "Real-time USGS feed magnitude class."
+      },
+      "requested_skill": {
+        "required": false,
+        "description": "Advanced optional skill-selection hint. Most clients should omit this."
+      }
+    },
+    "credentials": {
+      "required": false,
+      "one_of": [
+        "none",
+        "OPENAI_API_KEY",
+        "GIBD_API_KEY"
+      ],
+      "description": "No API key is required for deterministic USGS retrieval and processing. Supplying a model credential enables optional LLM-assisted tool planning for vague requests."
+    }
+  },
+  "conformance": {
+    "gas_version": "1.0.0",
+    "schemas": {
+      "describe_agent": "https://www.geospatial-agentic-services.online/schemas/describe_agent.schema.json",
+      "task_response": "https://www.geospatial-agentic-services.online/schemas/task_response.schema.json",
+      "execute_task_request": "https://www.geospatial-agentic-services.online/schemas/execute_task_request.schema.json"
+    }
+  },
+  "provenance_and_reproducibility": {
+    "provenance": {
+      "supported": true,
+      "description": "Includes USGS endpoint, query parameters, retrieval time, tool-call trace, LLM planning count when used, output artifact count, and lineage in the standard response."
+    },
+    "reproducibility": {
+      "supported": true,
+      "description": "Returns the deterministic query parameters, input references, output artifact references, environment metadata, and methods/provenance sections in generated reports."
+    },
+    "validation": {
+      "supported": true,
+      "description": "Validates that the USGS response is parsed into a GeoDataFrame and that requested artifacts are created. Reports include limitations on event revisions, uncertainty, and catalog completeness."
+    }
+  },
+  "governance": {
+    "access_control": {
+      "description": "Allowed roles set to ['all'] via the extension profile. No role-based access control is enforced."
+    },
+    "operation_policy": {
+      "description": "USGS retrieval does not require an API key. The agent uses deterministic geospatial tools for querying, export, mapping, reports, monitoring summaries, and screening analyses. Optional LLM use is limited to planning tool chains from natural language."
+    },
+    "review_policy": {
+      "description": "output_review_required is set to false. Users should review alert-ready summaries before operational use."
+    },
+    "policy_notes": "Earthquake summaries are for situational awareness and geospatial workflow support, not official emergency guidance."
+  },
+  "extensions": {
+    "description": "The USGS Earthquake Agent supports catalog and feed retrieval, GeoJSON/GeoPackage/CSV/Parquet exports, static PNG and interactive HTML basemap maps with magnitude-scaled or depth-colored symbols, animation-ready GeoJSON, grid summaries, impact buffers, cluster screening, one-time latest significant earthquake checks, seismic activity briefs, alert-ready summaries, and Markdown/HTML reports.",
+    "data_sources": [
+      {
+        "source_id": "USGS_Earthquake_Catalog",
+        "name": "USGS Earthquake Catalog API",
+        "description": "FDSN Event Web Service endpoint for custom earthquake searches.",
+        "endpoint": "https://earthquake.usgs.gov/fdsnws/event/1/query",
+        "credential_required": false
+      },
+      {
+        "source_id": "USGS_Earthquake_Feeds",
+        "name": "USGS Real-Time Earthquake Feeds",
+        "description": "GeoJSON feeds for significant, all, 4.5+, 2.5+, and 1.0+ events over past hour, day, week, or month.",
+        "endpoint": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/",
+        "credential_required": false
+      }
+    ],
+    "agentic_tooling": {
+      "description": "The LLM, when available, selects from deterministic tools rather than generating arbitrary code.",
+      "tools": [
+        "query_usgs_catalog",
+        "query_usgs_feed",
+        "save_events",
+        "generate_epicenter_map",
+        "create_time_animation_geojson",
+        "summarize_by_grid",
+        "create_impact_buffers",
+        "detect_clusters",
+        "create_alert_summary",
+        "generate_markdown_report",
+        "generate_html_report"
+      ]
+    }
+  }
+}

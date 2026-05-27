@@ -66,6 +66,7 @@
         "summary": {"type": "string"},
         "artifacts": {
           "type": "array",
+          "description": "Delivered output artifacts. Depending on task.artifact_delivery, each artifact may provide a downloadable URL or an encoded payload.",
           "items": {
             "type": "object",
             "required": ["name", "type", "format", "mime_type", "size_bytes"],
@@ -173,10 +174,12 @@
         "parameters_available": {"type": "boolean"},
         "input_artifacts": {
           "type": "array",
+          "description": "Lightweight provenance references to input artifacts used by the task. This field is for reproducibility metadata and must not contain large embedded file payloads.",
           "items": {"type": "object"}
         },
         "output_artifacts": {
           "type": "array",
+          "description": "Lightweight provenance references to output artifacts produced by the task. Actual artifact delivery, including URLs or encoded data, belongs in outputs.artifacts.",
           "items": {"type": "object"}
         },
         "parameters": {"type": "object"},
