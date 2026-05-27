@@ -4,7 +4,7 @@
     "agent_id": "exploratory_spatial_data_analysis_agent",
     "name": "Exploratory Spatial Data Analysis Agent",
     "description": "Performs exploratory spatial data analysis (ESDA) on tabular and geospatial datasets. It surfaces what is in the data and how it is arranged in space — distributions, descriptive statistics, missing-data patterns, correlations, and categorical breakdowns, plus a lightweight spatial layer: geometry diagnostics, classified choropleths (Quantiles / Equal Interval / Natural Breaks side by side), point-density maps, and a quick global spatial-autocorrelation check (Moran's I with a Moran scatterplot). Output is a polished HTML report with charts plus a plain-text summary. Stays descriptive and exploratory: it flags patterns rather than running formal inference. Distinct from the Data Inspection Agent (quality/readiness) and the Spatial Statistics Agent (formal spatial inference and modeling).",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "base_url": "https://www.geospatial-agentic-services.online/agents/exploratory_spatial_data_analysis_agent",
     "last_updated": "2026-05-24",
     "provider": {
