@@ -98,6 +98,10 @@ def _load_detail(db_path: str, registry_id: str) -> dict | None:
     return gas_registry.load_agent_from_db(registry_id, db_path=db_path)
 
 
+def _delete_agents(db_path: str, registry_ids: list[str]) -> dict:
+    return gas_registry.delete_agents_from_db(registry_ids, db_path=db_path)
+
+
 def _list_servers(db_path: str) -> list[dict]:
     if not os.path.exists(db_path):
         return []
@@ -206,6 +210,8 @@ def registry_api_root():
         endpoints={
             "agents": f"/registry{API_PATH}/agents",
             "agent_detail": f"/registry{API_PATH}/agents/{{registry_id}}",
+            "delete_agent": f"/registry{API_PATH}/agents/{{registry_id}}",
+            "delete_agents": f"/registry{API_PATH}/agents/delete",
             "agent_search": f"/registry{API_PATH}/agents/search",
             "servers": f"/registry{API_PATH}/servers",
             "remote_agents": f"/registry{API_PATH}/remote-agents",
@@ -224,6 +230,26 @@ def list_registered_agents():
     return _success(count=len(agents), agents=agents)
 
 
+@app.route(f"{API_PATH}/agents/delete", methods=["POST"])
+@app.route(f"{API_PATH}/agents/delete/", methods=["POST"])
+@app.route(f"/registry{API_PATH}/agents/delete", methods=["POST"])
+@app.route(f"/registry{API_PATH}/agents/delete/", methods=["POST"])
+def delete_registered_agents():
+    auth_error = _require_admin_token()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    registry_ids = data.get("registry_ids") or data.get("names") or []
+    if isinstance(registry_ids, str):
+        registry_ids = [name.strip() for name in registry_ids.split(",") if name.strip()]
+    if not registry_ids:
+        return _error("Missing 'registry_ids'.", 400)
+
+    result = _delete_agents(DB_PATH, registry_ids)
+    return _success(**result, count=len(result["deleted"]))
+
+
 @app.route(f"{API_PATH}/agents/<path:registry_id>")
 @app.route(f"{API_PATH}/agents/<path:registry_id>/")
 @app.route(f"/registry{API_PATH}/agents/<path:registry_id>")
@@ -234,6 +260,32 @@ def get_registered_agent(registry_id: str):
     if detail is None:
         return _error("Agent not found", 404)
     return jsonify(detail)
+
+
+@app.route(f"{API_PATH}/agents/<path:registry_id>", methods=["DELETE"])
+@app.route(f"{API_PATH}/agents/<path:registry_id>/", methods=["DELETE"])
+@app.route(f"/registry{API_PATH}/agents/<path:registry_id>", methods=["DELETE"])
+@app.route(f"/registry{API_PATH}/agents/<path:registry_id>/", methods=["DELETE"])
+def delete_registered_agent(registry_id: str):
+    auth_error = _require_admin_token()
+    if auth_error:
+        return auth_error
+
+    registry_id = registry_id.rstrip("/")
+    if not registry_id:
+        return _error("Missing 'registry_id'.", 400)
+    result = _delete_agents(DB_PATH, [registry_id])
+    if not result["deleted"]:
+        return _error("Agent not found", 404)
+    return _success(**result, count=len(result["deleted"]))
+
+
+@app.route("/api/gas/delete-selected", methods=["POST"])
+@app.route("/api/gas/delete-selected/", methods=["POST"])
+@app.route("/registry/api/gas/delete-selected", methods=["POST"])
+@app.route("/registry/api/gas/delete-selected/", methods=["POST"])
+def delete_registered_agents_legacy():
+    return _legacy_write_response(delete_registered_agents())
 
 
 @app.route("/api/gas")

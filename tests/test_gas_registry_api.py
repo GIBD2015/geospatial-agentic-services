@@ -160,6 +160,98 @@ def test_registry_agent_detail_api_accepts_trailing_slash(monkeypatch):
     assert payload["profile"]["agent_id"] == "mapping_agent"
 
 
+def test_registry_delete_agents_api_deletes_selected_records(monkeypatch):
+    client = _registry_client(monkeypatch)
+    registry_id = client.get("/registry/api/agents").get_json()["agents"][0]["registry_id"]
+
+    response = client.post(
+        "/registry/api/agents/delete",
+        json={"registry_ids": [registry_id, "missing_agent"]},
+    )
+    payload = response.get_json()
+    remaining = client.get("/registry/api/agents").get_json()
+
+    assert response.status_code == 200
+    assert payload["status"] == "success"
+    assert payload["deleted"] == [registry_id]
+    assert payload["missing"] == ["missing_agent"]
+    assert payload["count"] == 1
+    assert remaining["count"] == 0
+
+
+def test_registry_delete_agents_api_accepts_trailing_slash(monkeypatch):
+    client = _registry_client(monkeypatch)
+    registry_id = client.get("/registry/api/agents").get_json()["agents"][0]["registry_id"]
+
+    response = client.post(
+        "/registry/api/agents/delete/",
+        json={"registry_ids": [registry_id]},
+    )
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["status"] == "success"
+    assert payload["deleted"] == [registry_id]
+
+
+def test_registry_delete_agent_api_deletes_one_record(monkeypatch):
+    client = _registry_client(monkeypatch)
+    registry_id = client.get("/registry/api/agents").get_json()["agents"][0]["registry_id"]
+
+    response = client.delete(f"/registry/api/agents/{registry_id}")
+    payload = response.get_json()
+    remaining = client.get("/registry/api/agents").get_json()
+
+    assert response.status_code == 200
+    assert payload["status"] == "success"
+    assert payload["deleted"] == [registry_id]
+    assert remaining["count"] == 0
+
+
+def test_registry_delete_agent_api_requires_admin_token_when_configured(monkeypatch):
+    client = _registry_client(monkeypatch)
+    registry_id = client.get("/registry/api/agents").get_json()["agents"][0]["registry_id"]
+    monkeypatch.setenv("GAS_REGISTRY_ADMIN_TOKEN", "secret-token")
+
+    response = client.delete(f"/registry/api/agents/{registry_id}")
+    payload = response.get_json()
+
+    assert response.status_code == 401
+    assert payload["status"] == "error"
+
+
+def test_registry_delete_agent_api_accepts_admin_token_header(monkeypatch):
+    client = _registry_client(monkeypatch)
+    registry_id = client.get("/registry/api/agents").get_json()["agents"][0]["registry_id"]
+    monkeypatch.setenv("GAS_REGISTRY_ADMIN_TOKEN", "secret-token")
+
+    response = client.delete(
+        f"/registry/api/agents/{registry_id}",
+        headers={"X-Registry-Admin-Token": "secret-token"},
+    )
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["status"] == "success"
+    assert payload["deleted"] == [registry_id]
+
+
+def test_registry_legacy_ui_delete_selected_keeps_ok_shape(monkeypatch):
+    client = _registry_client(monkeypatch)
+    registry_id = client.get("/registry/api/agents").get_json()["agents"][0]["registry_id"]
+
+    response = client.post(
+        "/registry/api/gas/delete-selected",
+        json={"registry_ids": [registry_id]},
+    )
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert "status" not in payload
+    assert payload["deleted"] == [registry_id]
+
+
 def test_registry_search_api_returns_agents(monkeypatch):
     client = _registry_client(monkeypatch)
 

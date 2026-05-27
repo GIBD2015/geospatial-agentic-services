@@ -283,8 +283,8 @@ http://127.0.0.1:4043/registry
 The registry source is kept in [gas_registry](gas_registry). See
 [docs/gas_registry.md](docs/gas_registry.md) for UI details, developer and AI
 agent API access, public `GET` endpoints for listing/searching agents,
-admin-token-protected `POST` endpoints for registration, the UI token flow,
-and deployment notes.
+admin-token-protected write endpoints for registration and deletion, the UI
+token flow, and deployment notes.
 
 ## Example Notebooks
 

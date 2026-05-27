@@ -57,6 +57,7 @@ The registry web page supports:
 - registration of all agents from a GAS server
 - listing remote agents before registration
 - selected-agent registration
+- selected-agent deletion from the local registry database
 - detailed agent popups
 - direct links to each source server's original `DescribeAgent` document
 
@@ -130,7 +131,8 @@ when the request succeeds. Error responses use:
 }
 ```
 
-Write endpoints use `POST` because they modify the registry database.
+Write endpoints use `POST` or `DELETE` because they modify the registry
+database.
 
 ### API Root
 
@@ -150,6 +152,8 @@ Example response shape:
   "endpoints": {
     "agents": "/registry/api/agents",
     "agent_detail": "/registry/api/agents/{registry_id}",
+    "delete_agent": "/registry/api/agents/{registry_id}",
+    "delete_agents": "/registry/api/agents/delete",
     "agent_search": "/registry/api/agents/search",
     "servers": "/registry/api/servers",
     "remote_agents": "/registry/api/remote-agents",
@@ -375,6 +379,60 @@ Authorization: Bearer <token>
 }
 ```
 
+### Delete Registered Agents
+
+Delete endpoints remove records from the local registry database only. They do
+not call, modify, or delete anything on the source GAS server.
+
+Use the server-qualified `registry_id` returned by `/registry/api/agents`.
+This matters when the same `agent_id` is registered from more than one source
+GAS server.
+
+Delete one registered agent:
+
+```http
+DELETE /registry/api/agents/{registry_id}
+Authorization: Bearer <token>
+```
+
+Delete multiple registered agents:
+
+```http
+POST /registry/api/agents/delete
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "registry_ids": [
+    "mapping_agent@www.geospatial-agentic-services.online",
+    "raster_agent@www.geospatial-agentic-services.online"
+  ]
+}
+```
+
+Example success response:
+
+```json
+{
+  "status": "success",
+  "requested": [
+    "mapping_agent@www.geospatial-agentic-services.online",
+    "missing_agent@example"
+  ],
+  "deleted": [
+    "mapping_agent@www.geospatial-agentic-services.online"
+  ],
+  "missing": [
+    "missing_agent@example"
+  ],
+  "count": 1
+}
+```
+
+The batch endpoint reports missing registry IDs but still deletes the records
+that exist. The single-agent `DELETE` endpoint returns `404` when the requested
+record is not present.
+
 Example token errors:
 
 Missing token in a request:
@@ -416,6 +474,7 @@ Legacy UI routes include:
 - `/registry/api/gas/list-remote`
 - `/registry/api/gas/register`
 - `/registry/api/gas/register-selected`
+- `/registry/api/gas/delete-selected`
 
 ## Register A GAS Server
 
@@ -436,12 +495,17 @@ server has already been registered, the latest capability information updates
 the existing records for that server. Click **List Agents** when you want to
 preview the advertised agents and register only selected services.
 
+To remove records from the registry UI, select the checkbox on one or more
+agent cards, click **Delete Selected**, enter the registry admin token, and
+confirm deletion. This removes only the selected local registry records. It
+does not remove the agent from its source GAS server.
+
 If the deployment sets `GAS_REGISTRY_ADMIN_TOKEN`, the registration modal's
 optional **Admin Token** field must contain that token before registration
 requests can update the registry database. The token is provided by the
 registry administrator and is not generated or stored by the web UI. The token
-is sent only with registration requests, not with public read/search/list
-requests.
+is sent only with write requests such as registration and deletion, not with
+public read/search/list requests.
 
 ## Deployment Notes
 

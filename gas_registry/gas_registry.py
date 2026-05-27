@@ -430,6 +430,49 @@ def load_agent_from_db(agent_name, db_path=DEFAULT_DB_PATH):
     return json.loads(row[0]) if row else None
 
 
+def delete_agents_from_db(agent_names, db_path=DEFAULT_DB_PATH):
+    """Delete selected registry records and report deleted/missing names."""
+    if isinstance(agent_names, str):
+        agent_names = [agent_names]
+    requested = []
+    seen = set()
+    for name in agent_names or []:
+        clean_name = str(name or "").strip()
+        if clean_name and clean_name not in seen:
+            requested.append(clean_name)
+            seen.add(clean_name)
+
+    if not requested:
+        return {"requested": [], "deleted": [], "missing": []}
+
+    conn = init_db(db_path)
+    try:
+        placeholders = ", ".join(["?"] * len(requested))
+        existing = [
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM agents WHERE name IN (%s)" % placeholders,
+                requested,
+            ).fetchall()
+        ]
+        if existing:
+            delete_placeholders = ", ".join(["?"] * len(existing))
+            conn.execute(
+                "DELETE FROM agents WHERE name IN (%s)" % delete_placeholders,
+                existing,
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    existing_set = set(existing)
+    return {
+        "requested": requested,
+        "deleted": [name for name in requested if name in existing_set],
+        "missing": [name for name in requested if name not in existing_set],
+    }
+
+
 def show_db(db_path=DEFAULT_DB_PATH):
     """Print a summary of the stored agents (every column except the
     full ``agent_info`` blob). Returns the number of rows shown.

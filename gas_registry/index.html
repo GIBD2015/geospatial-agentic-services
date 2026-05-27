@@ -92,6 +92,7 @@
             border-radius: 24px;
             padding: 24px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -434,6 +435,38 @@
         }
         .primary-btn:active { transform: translateY(1px); }
         .primary-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .danger-btn {
+            background: #fff;
+            color: #b3261e;
+            border: 1px solid #f0b8b3;
+            border-radius: 14px;
+            padding: 10px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+        .danger-btn:hover:not(:disabled) {
+            background: #fdecec;
+            border-color: #d93025;
+            color: #8c1d18;
+        }
+        .danger-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .select-visible-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 14px;
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+        .select-visible-control input { accent-color: var(--accent-color); cursor: pointer; }
         .view-toggle {
             display: inline-flex;
             align-items: center;
@@ -791,6 +824,46 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .agent-select-control {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #d2d2d7;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .agent-select-control:hover { border-color: var(--accent-color); }
+        .agent-select-control input {
+            width: 15px;
+            height: 15px;
+            margin: 0;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+        .card.is-selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 26px rgba(0,122,255,0.14);
+        }
+        .delete-list {
+            max-height: 180px;
+            overflow-y: auto;
+            margin: 10px 0 0;
+            padding: 10px 12px;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
 
         .empty-state {
             grid-column: 1 / -1;
@@ -1093,6 +1166,11 @@
             </div>
         </div>
         <button id="register-btn" class="primary-btn" type="button">Register GAS Server</button>
+        <label class="select-visible-control">
+            <input id="select-visible-agents" type="checkbox">
+            Select visible
+        </label>
+        <button id="delete-selected-btn" class="danger-btn" type="button" disabled>Delete Selected</button>
         <div class="view-toggle" aria-label="Display mode">
             <button id="card-view-btn" class="active" type="button" aria-pressed="true">Card</button>
             <button id="list-view-btn" type="button" aria-pressed="false">List</button>
@@ -1200,6 +1278,10 @@
             document.body.appendChild(modalOverlay);
 
             function closeModal() {
+                if (deletionModalOpen) {
+                    deletionModalOpen = false;
+                    clearSearchFilterPreservingSelection();
+                }
                 modalOverlay.classList.remove("open");
                 document.body.style.overflow = "";
             }
@@ -1547,11 +1629,22 @@
             }
             // ---- /Modal ----
 
+            function wireCardSelection(article) {
+                var cb = article.querySelector(".agent-select-cb");
+                if (!cb) return;
+                cb.addEventListener("click", function(e) { e.stopPropagation(); });
+                cb.addEventListener("change", function() {
+                    article.classList.toggle("is-selected", cb.checked);
+                    updateSelectionControls();
+                });
+            }
+
             function renderCard(agentEntry, detail) {
                 var profile = (detail && detail.profile) || {};
                 // Slug = stable identifier (snake_case) used for icon lookup.
                 // New profiles expose it as agent_id; legacy used profile.name.
                 var slug = profile.agent_id || agentEntry.name || profile.name || "";
+                var registryId = agentEntry.registry_id || agentEntry.name || slug;
                 var icon = ICON_MAP[slug] || DEFAULT_ICON;
                 // Display title: prefer the human-readable profile.name when it
                 // differs from the slug; otherwise derive one from the slug.
@@ -1566,6 +1659,9 @@
                 var article = document.createElement("article");
                 article.className = "card";
                 article.innerHTML =
+                    '<label class="agent-select-control" title="Select for deletion">' +
+                        '<input type="checkbox" class="agent-select-cb" value="' + escapeHtml(registryId) + '" aria-label="Select ' + escapeHtml(title) + ' for deletion">' +
+                    '</label>' +
                     '<div class="card-header">' +
                         '<div class="icon ' + escapeHtml(icon.cls) + '">' + icon.emoji + '</div>' +
                         '<div class="title-group">' +
@@ -1588,25 +1684,31 @@
                         learnMoreEl.addEventListener("click", function() { openModal(agentEntry, detail); });
                     }
                 }
+                wireCardSelection(article);
                 return article;
             }
 
             function renderErrorCard(agentEntry, err) {
                 var slug = agentEntry.name || "";
+                var title = toDisplayTitle(slug);
                 var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
                 var article = document.createElement("article");
                 article.className = "card";
                 article.innerHTML =
+                    '<label class="agent-select-control" title="Select for deletion">' +
+                        '<input type="checkbox" class="agent-select-cb" value="' + escapeHtml(slug) + '" aria-label="Select ' + escapeHtml(title) + ' for deletion">' +
+                    '</label>' +
                     '<div class="card-header">' +
                         '<div class="icon ' + escapeHtml((ICON_MAP[slug] || DEFAULT_ICON).cls) + '">!</div>' +
                         '<div class="title-group">' +
-                            '<h3 class="title">' + escapeHtml(toDisplayTitle(slug)) + '</h3>' +
+                            '<h3 class="title">' + escapeHtml(title) + '</h3>' +
                             '<p class="version">Unavailable</p>' +
                             (sourceServer ? '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' + escapeHtml(sourceServer) + '</p>' : '') +
                         '</div>' +
                     '</div>' +
                     '<div class="divider"></div>' +
                     '<p class="description">Could not load agent details: ' + escapeHtml(err && err.message ? err.message : String(err)) + '</p>';
+                wireCardSelection(article);
                 return article;
             }
 
@@ -1618,7 +1720,10 @@
             var prevPageBtn = document.getElementById("prev-page-btn");
             var nextPageBtn = document.getElementById("next-page-btn");
             var pageStatus = document.getElementById("page-status");
+            var selectVisibleAgents = document.getElementById("select-visible-agents");
+            var deleteSelectedBtn = document.getElementById("delete-selected-btn");
             var currentPage = 1;
+            var deletionModalOpen = false;
 
             try {
                 pageSizeSelect.value = window.localStorage.getItem("gasRegistryPageSize") || "10";
@@ -1629,6 +1734,33 @@
             function matchingCards() {
                 return Array.prototype.slice.call(container.querySelectorAll(".card"))
                     .filter(function(card) { return card.getAttribute("data-filter-match") !== "false"; });
+            }
+
+            function visibleCardsOnCurrentPage() {
+                return Array.prototype.slice.call(container.querySelectorAll(".card"))
+                    .filter(function(card) { return card.style.display !== "none"; });
+            }
+
+            function selectedCheckboxes() {
+                return Array.prototype.slice.call(container.querySelectorAll(".agent-select-cb"))
+                    .filter(function(cb) { return cb.checked; });
+            }
+
+            function updateSelectionControls() {
+                var selected = selectedCheckboxes();
+                deleteSelectedBtn.disabled = selected.length === 0;
+                deleteSelectedBtn.textContent = selected.length
+                    ? ("Delete Selected (" + selected.length + ")")
+                    : "Delete Selected";
+
+                var visible = visibleCardsOnCurrentPage();
+                var visibleChecks = visible.map(function(card) {
+                    return card.querySelector(".agent-select-cb");
+                }).filter(Boolean);
+                var selectedVisible = visibleChecks.filter(function(cb) { return cb.checked; }).length;
+                selectVisibleAgents.disabled = visibleChecks.length === 0;
+                selectVisibleAgents.checked = visibleChecks.length > 0 && selectedVisible === visibleChecks.length;
+                selectVisibleAgents.indeterminate = selectedVisible > 0 && selectedVisible < visibleChecks.length;
             }
 
             function updatePagination() {
@@ -1655,8 +1787,9 @@
                 nextPageBtn.disabled = currentPage >= totalPages;
                 pageStatus.textContent = cards.length
                     ? ("Page " + currentPage + " of " + totalPages + " · " + cards.length + " agent" + (cards.length === 1 ? "" : "s"))
-                    : "No matching agents";
+                    : (container.querySelectorAll(".card").length ? "No matching agents" : "No registered agents");
                 updateEmptyState(cards.length, !!(searchInput && searchInput.value && searchInput.value.trim()));
+                updateSelectionControls();
                 return visibleOnPage;
             }
 
@@ -1680,6 +1813,17 @@
             nextPageBtn.addEventListener("click", function() {
                 currentPage += 1;
                 updatePagination();
+            });
+            selectVisibleAgents.addEventListener("change", function() {
+                var checked = selectVisibleAgents.checked;
+                visibleCardsOnCurrentPage().forEach(function(card) {
+                    var cb = card.querySelector(".agent-select-cb");
+                    if (cb) {
+                        cb.checked = checked;
+                        card.classList.toggle("is-selected", checked);
+                    }
+                });
+                updateSelectionControls();
             });
 
             function setDisplayMode(mode) {
@@ -1743,12 +1887,19 @@
 
             function appendAgentsFromCapabilities(caps) {
                 var agents = (caps && caps.agents) || [];
+                if (!agents.length && container.querySelectorAll(".card").length === 0) {
+                    setStatus("No agents are registered yet.");
+                    resetPagination();
+                    return Promise.resolve({ added: 0, total: 0, duplicates: 0 });
+                }
                 var fresh = agents.filter(function(a) {
                     var slug = a && a.name;
                     if (!slug || renderedSlugs[slug]) return false;
                     return true;
                 });
                 if (!fresh.length) {
+                    clearStatus();
+                    resetPagination();
                     return Promise.resolve({ added: 0, total: agents.length, duplicates: agents.length });
                 }
                 return Promise.all(fresh.map(function(a) {
@@ -1777,9 +1928,11 @@
             // POST a remote GetCapabilities URL to our server, which fetches
             // every agent it publishes and writes them into gas_registry.db.
             // (The remote fetch is server-side, so no browser CORS limits.)
-            function adminTokenHeaders() {
+            function adminTokenHeaders(tokenValue) {
                 var input = document.getElementById("register-token-input");
-                var token = input ? (input.value || "").trim() : "";
+                var token = tokenValue != null
+                    ? String(tokenValue || "").trim()
+                    : (input ? (input.value || "").trim() : "");
                 return token ? { "X-Registry-Admin-Token": token } : {};
             }
 
@@ -1828,6 +1981,9 @@
             // Show/hide already-rendered cards by a set of matching slugs.
             // names === null means "no query" -> show everything.
             function applyNameFilter(names, hasQuery) {
+                if (deletionModalOpen) {
+                    return;
+                }
                 var set = null;
                 if (names) {
                     set = Object.create(null);
@@ -1844,6 +2000,9 @@
 
             // Offline/fallback: the original client-side substring filter.
             function applySearchFilter() {
+                if (deletionModalOpen) {
+                    return;
+                }
                 var q = (searchInput.value || "").trim().toLowerCase();
                 var cards = container.querySelectorAll(".card");
                 cards.forEach(function(card) {
@@ -1889,6 +2048,9 @@
             // Server-side query: real SQL (LIKE + json_each) on gas_registry.db.
             var searchSeq = 0;
             function runSearch() {
+                if (deletionModalOpen) {
+                    return;
+                }
                 var q = (searchInput.value || "").trim();
                 var params = activeFilterParams();
                 if (q) {
@@ -1964,6 +2126,165 @@
             //     filterInputs.forEach(function(cb) { cb.checked = false; });
             //     runSearch();
             // });
+
+            function selectedAgentSummaries() {
+                return selectedCheckboxes().map(function(cb) {
+                    var card = cb.closest(".card");
+                    var title = card && card.querySelector(".title")
+                        ? card.querySelector(".title").textContent
+                        : cb.value;
+                    return { id: cb.value, title: title || cb.value };
+                });
+            }
+
+            function clearSearchFilterPreservingSelection() {
+                var selected = Object.create(null);
+                selectedCheckboxes().forEach(function(cb) {
+                    selected[cb.value] = true;
+                });
+                clearTimeout(searchTimer);
+                searchSeq += 1;
+                if (searchInput) {
+                    searchInput.value = "";
+                }
+                Array.prototype.slice.call(container.querySelectorAll(".card")).forEach(function(card) {
+                    var cb = card.querySelector(".agent-select-cb");
+                    card.setAttribute("data-filter-match", "true");
+                    if (cb) {
+                        cb.checked = !!selected[cb.value];
+                        card.classList.toggle("is-selected", cb.checked);
+                    }
+                });
+                resetPagination();
+            }
+
+            function deleteAgentsFromDatabase(registryIds, token) {
+                var headers = Object.assign(
+                    { "Content-Type": "application/json" },
+                    adminTokenHeaders(token)
+                );
+                return fetch(apiUrl("/registry/api/agents/delete"), {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify({ registry_ids: registryIds })
+                }).then(function(r) {
+                    var contentType = r.headers.get("content-type") || "";
+                    var bodyPromise = contentType.indexOf("application/json") !== -1
+                        ? r.json()
+                        : r.text().then(function(text) {
+                            return { status: "error", error: "Delete request returned HTTP " + r.status + " instead of JSON.", details: text };
+                        });
+                    return bodyPromise.then(function(body) {
+                        if (!r.ok || !body || body.status === "error" || body.ok === false) {
+                            throw new Error(body && body.error ? body.error : ("HTTP " + r.status));
+                        }
+                        return body;
+                    });
+                });
+            }
+
+            function removeDeletedCards(registryIds) {
+                var deleted = Object.create(null);
+                registryIds.forEach(function(id) { deleted[id] = true; });
+                Array.prototype.slice.call(container.querySelectorAll(".card")).forEach(function(card) {
+                    var cb = card.querySelector(".agent-select-cb");
+                    var id = cb ? cb.value : "";
+                    if (deleted[id]) {
+                        card.remove();
+                        delete renderedSlugs[id];
+                    } else if (!searchInput || !(searchInput.value || "").trim()) {
+                        card.setAttribute("data-filter-match", "true");
+                    }
+                });
+                resetPagination();
+            }
+
+            function openDeleteModal() {
+                var selected = selectedAgentSummaries();
+                var ids = selected.map(function(item) { return item.id; });
+                if (!ids.length) return;
+                deletionModalOpen = true;
+                clearSearchFilterPreservingSelection();
+                var rows = selected.map(function(item) {
+                    return '<div><strong>' + escapeHtml(item.title) + '</strong><br><code>' + escapeHtml(item.id) + '</code></div>';
+                }).join("");
+                modalContent.innerHTML =
+                    '<button class="modal-close" type="button" aria-label="Close">&times;</button>' +
+                    '<h2 class="modal-title">Delete Selected Agents</h2>' +
+                    '<p class="modal-meta">This removes ' + ids.length + ' registry record' + (ids.length === 1 ? '' : 's') + ' from the local GAS registry database.</p>' +
+                    '<div class="delete-list">' + rows + '</div>' +
+                    '<div class="form-row" style="margin-top:18px;">' +
+                        '<label class="form-label" for="delete-token-input">Admin Token</label>' +
+                        '<input id="delete-token-input" class="form-input" type="password" autocomplete="off" ' +
+                            'placeholder="Required only when configured by the registry administrator">' +
+                    '</div>' +
+                    '<div id="delete-status" class="form-status"></div>' +
+                    '<div class="form-actions">' +
+                        '<button type="button" id="delete-cancel" class="secondary-btn">Cancel</button>' +
+                        '<button type="button" id="delete-confirm" class="danger-btn">Delete</button>' +
+                    '</div>';
+
+                function closeDeleteModal() {
+                    deletionModalOpen = false;
+                    closeModal();
+                    clearSearchFilterPreservingSelection();
+                }
+                modalContent.querySelector(".modal-close").addEventListener("click", closeDeleteModal);
+                modalContent.querySelector("#delete-cancel").addEventListener("click", closeDeleteModal);
+                modalContent.querySelector("#delete-confirm").addEventListener("click", function() {
+                    var tokenInput = document.getElementById("delete-token-input");
+                    var statusBox = document.getElementById("delete-status");
+                    var confirmBtn = document.getElementById("delete-confirm");
+                    confirmBtn.disabled = true;
+                    if (tokenInput) tokenInput.disabled = true;
+                    statusBox.className = "form-status info";
+                    statusBox.textContent = "Deleting selected registry records...";
+                    deleteAgentsFromDatabase(ids, tokenInput ? tokenInput.value : "")
+                        .then(function(body) {
+                            var deleted = (body && body.deleted) || [];
+                            if (searchInput && searchInput.value) {
+                                searchInput.value = "";
+                            }
+                            applyNameFilter(null, false);
+                            removeDeletedCards(deleted);
+                            statusBox.className = "form-status success";
+                            statusBox.textContent = "Deleted " + deleted.length + " registry record" + (deleted.length === 1 ? "" : "s") + ".";
+                            var cancelBtn = modalContent.querySelector("#delete-cancel");
+                            if (cancelBtn) cancelBtn.textContent = "Close";
+                            if (cancelBtn) {
+                                cancelBtn.removeEventListener("click", closeDeleteModal);
+                                cancelBtn.addEventListener("click", function() {
+                                    deletionModalOpen = false;
+                                    closeModal();
+                                    clearSearchFilterPreservingSelection();
+                                });
+                            }
+                            confirmBtn.style.display = "none";
+                        })
+                        .catch(function(err) {
+                            statusBox.className = "form-status error";
+                            statusBox.textContent = err && err.message ? err.message : String(err);
+                            confirmBtn.disabled = false;
+                            if (tokenInput) tokenInput.disabled = false;
+                        });
+                });
+                modalContent.scrollTop = 0;
+                modalOverlay.classList.add("open");
+                document.body.style.overflow = "hidden";
+                setTimeout(function() {
+                    var input = document.getElementById("delete-token-input");
+                    if (input) input.focus();
+                }, 50);
+            }
+
+            deleteSelectedBtn.addEventListener("pointerdown", function() {
+                clearSearchFilterPreservingSelection();
+            }, true);
+            deleteSelectedBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                clearSearchFilterPreservingSelection();
+                openDeleteModal();
+            });
 
             // ---- Register modal ----
             var registerBtn = document.getElementById("register-btn");
