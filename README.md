@@ -303,8 +303,16 @@ token flow, and deployment notes.
 ## Example Notebooks
 
 Example workflows are available in [examples_for_using_gas_services](examples_for_using_gas_services).
-They show several ways to consume GAS services from notebooks, ranging from raw
-HTTP requests to streamed multi-agent service chains.
+These notebooks are not intended to demonstrate the capabilities of the
+included agents. They show how geospatial agents with different
+capabilities, hosted on distributed GAS servers, can be published
+as interoperable agentic services, described, discovered, invoked, and composed into
+reproducible geospatial workflows.
+
+The examples illustrate several ways to
+consume GAS services from notebooks, ranging from raw HTTP requests to streamed
+multi-agent service chains. They are meant to clarify the GAS interoperability
+workflow rather than to benchmark or promote any specific agent implementation.
 
 - [gas_raw_requests_usage.ipynb](examples_for_using_gas_services/gas_raw_requests_usage.ipynb)
   demonstrates the GAS HTTP interface directly with `requests`, including
@@ -375,9 +383,7 @@ We thank the coauthors of the paper
 Intelligence](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence)
 for their contributions to the development of the broader GAS concepts.
 
-We welcome contributions from the broader geospatial community, particularly
-efforts to improve the GAS server and to develop, deploy, and host GAS agent
-services.
+We welcome contributions from the broader geospatial community to advance both the GAS framework and its reference implementation, including but not limited to use cases, interoperability models, validation methods, documentation, software components, registries, and GAS-compatible agent services.
 
 [Geoinformation and Big Data Research Laboratory
 (GIBD)](https://giscience.psu.edu/), Department of Geography, Penn State.
