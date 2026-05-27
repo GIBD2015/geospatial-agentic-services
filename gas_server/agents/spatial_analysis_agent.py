@@ -122,17 +122,22 @@ OPERATION_REQUIREMENTS = [
     "DO NOT change the given variable names and paths.",
     "Put your reply into a Python code block (enclosed by ```python and ```), NO explanation or conversation outside the code block.",
     (
-        "OUTPUT DIRECTORIES (mandatory): two variables are injected into the execution scope at runtime: "
-        "(a) OUTPUT_DIR for intermediate files and (b) FINAL_OUTPUT_DIR for the user-facing final result. "
-        "When your function writes a file, build its path with os.path.join(OUTPUT_DIR, <filename>) or "
-        "os.path.join(FINAL_OUTPUT_DIR, <filename>). Never hardcode absolute paths and never use bare "
-        "relative paths. Do not redefine OUTPUT_DIR or FINAL_OUTPUT_DIR."
+        "OUTPUT DIRECTORY (mandatory): a single variable OUTPUT_DIR is injected into the execution "
+        "scope at runtime. When your function writes a file, build its path with "
+        "os.path.join(OUTPUT_DIR, <filename>). Never hardcode absolute paths, never use bare relative "
+        "paths, and do not redefine OUTPUT_DIR."
     ),
     (
-        "FIGURES / MAPS: use plt.savefig(os.path.join(<dir>, <filename>), dpi=150, bbox_inches='tight') "
+        "FIGURES / MAPS: use plt.savefig(os.path.join(OUTPUT_DIR, <filename>), dpi=150, bbox_inches='tight') "
         "followed by plt.close(). Never call plt.show(). Folium/Plotly maps must be saved with .save(...)."
     ),
-    "Do not infer output paths from input paths. Output must live under OUTPUT_DIR / FINAL_OUTPUT_DIR.",
+    "Do not infer output paths from input paths. Output must live under OUTPUT_DIR.",
+    (
+        "Write a file ONLY when this operation produces a final/terminal output of the workflow (a node "
+        "with no descendant operations). The final output may be ANY file type (.gpkg, .geojson, .csv, "
+        ".png, .html, .json, .txt, ...). Intermediate operations should return their result in memory "
+        "(GeoDataFrame, DataFrame, array, value) rather than writing an intermediate file."
+    ),
     "Receive data via function parameters. Do NOT reload data that an ancestor function already returns.",
     "When doing spatial analysis, reproject all involved spatial layers into a common CRS before the operation.",
     "If joining DataFrame and GeoDataFrame on common columns, do NOT convert the DataFrame to a GeoDataFrame.",
@@ -152,13 +157,18 @@ ASSEMBLY_REQUIREMENTS = [
     "Each function is one step toward solving the question; the output of the final function is the final answer.",
     "Put your reply in a code block (enclosed by ```python and ```), NO explanation or conversation outside the code block.",
     (
-        "OUTPUT DIRECTORIES: OUTPUT_DIR and FINAL_OUTPUT_DIR are already defined in the execution scope. "
-        "Use os.path.join(OUTPUT_DIR, ...) for intermediates and os.path.join(FINAL_OUTPUT_DIR, ...) for "
-        "final answer file(s). Do not redefine either variable. Do not use bare relative or hardcoded absolute paths."
+        "OUTPUT DIRECTORY: OUTPUT_DIR is already defined in the execution scope. Write every file with "
+        "os.path.join(OUTPUT_DIR, ...). Do not redefine it. Do not use bare relative or hardcoded absolute paths."
     ),
-    "Every final result MUST be persisted to a file inside FINAL_OUTPUT_DIR — not just printed or kept in memory.",
     (
-        "FIGURES: for every matplotlib figure call plt.savefig(<path>, dpi=150, bbox_inches='tight') then plt.close(). "
+        "PERSIST ONLY THE FINAL OUTPUT: the workflow's terminal/final output node(s) MUST be written "
+        "to a file inside OUTPUT_DIR — never just printed or left in memory. The final output may be "
+        "ANY file type appropriate to the result (e.g. .gpkg, .geojson, .csv, .png, .html, .json, .txt); "
+        "do not assume it is a GeoPackage or map image. Intermediate results are NOT required on disk — "
+        "pass them between functions in memory (as return values) instead of writing intermediate files."
+    ),
+    (
+        "FIGURES: for every matplotlib figure call plt.savefig(os.path.join(OUTPUT_DIR, <filename>), dpi=150, bbox_inches='tight') then plt.close(). "
         "Never call plt.show(). Save folium / plotly maps via .save(<path>)."
     ),
     'The program must be executable. Put the orchestration code in a function named assembely_solution() and call it. Do NOT use \'if __name__ == "__main__":\'.',
@@ -194,7 +204,7 @@ class SpatialAnalysisAgent(GeoAgent):
 
     agent_id = "spatial_analysis_agent"
     agent_name = "Spatial Analysis Agent"
-    agent_version = "1.1.0"
+    agent_version = "1.2.0"
     agent_description = (
         "Audits input datasets, asks an LLM to design a NetworkX workflow DAG that solves the task, "
         "generates Python code for each operation node, assembles the operations into a single "
@@ -232,6 +242,8 @@ class SpatialAnalysisAgent(GeoAgent):
         self.assembly_prompt: Optional[str] = None
         self.assembly_code: str = ""
         self.workflow_code: str = ""
+        # Tracked-output baseline, seeded once per run before the first assembly attempt.
+        self._output_baseline_mtimes: Optional[Dict[str, float]] = None
 
   
 
@@ -938,11 +950,12 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             final_list = "\n".join(f"  - **{n['name']}**: {n['description']}" for n in final_outputs)
             final_section = (
                 "\n\n## FINAL OUTPUT NODES (from the workflow graph)\n"
-                "The workflow graph has the following terminal output node(s) — these MUST be saved "
-                "to FINAL_OUTPUT_DIR (not OUTPUT_DIR):\n"
-                f"{final_list}\n\n"
-                "Each must be written to a file in FINAL_OUTPUT_DIR using os.path.join(FINAL_OUTPUT_DIR, <filename>). "
-                "All other intermediate data should go to OUTPUT_DIR."
+                "The workflow graph has the following terminal output node(s) — these are the result "
+                "the user actually needs, and each MUST be written to a file in OUTPUT_DIR using "
+                f"os.path.join(OUTPUT_DIR, <filename>):\n{final_list}\n\n"
+                "Pick whatever file type fits the result (.gpkg, .geojson, .csv, .png, .html, .json, "
+                ".txt, ...). Intermediate data does NOT need to be written to disk — pass it between "
+                "functions in memory; only the final output(s) above must be persisted."
             )
         else:
             final_section = ""
@@ -1046,36 +1059,127 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
 
 
 
-    def _execute_assembly(self, code: str, output_dir: str, final_output_dir: str) -> Dict[str, Any]:
-        self.increment_code_executions()
-        os.makedirs(output_dir, exist_ok=True)
-        os.makedirs(final_output_dir, exist_ok=True)
+    # Invocation of the assembled entry point, e.g. ``assembely_solution()``,
+    # ``result = assembely_solution()`` or ``print(assembely_solution())`` — but NOT the
+    # ``def assembely_solution():`` line. Captures the leading indentation so we can
+    # replace the call with ``pass`` (preserving block structure) and invoke the function
+    # ourselves to capture its return value without executing the workflow twice.
+    _ENTRYPOINT_CALL_RE = re.compile(
+        r"(?m)^(?P<indent>[ \t]*)(?!def\b)[^\n]*\bassembely_solution\s*\(\s*\)[^\n]*$"
+    )
 
-        before_mtimes: Dict[str, float] = {}
+    @classmethod
+    def _strip_entrypoint_call(cls, code: str) -> tuple[str, bool]:
+        """Return ``(code_without_call, had_call)`` for the assembly entry point.
+
+        The call is replaced with an indented ``pass`` rather than deleted, so removing
+        a guarded call (e.g. inside ``if __name__ == "__main__":`` — which the LLM is
+        told not to write but sometimes does) cannot leave an empty block behind.
+        """
+        had_call = bool(cls._ENTRYPOINT_CALL_RE.search(code))
+        if not had_call:
+            return code, False
+        stripped = cls._ENTRYPOINT_CALL_RE.sub(lambda m: f"{m.group('indent')}pass", code)
+        return stripped, True
+
+    @staticmethod
+    def _existing_paths_from_value(value: Any) -> List[str]:
+        """Collect existing file paths referenced anywhere in a return value.
+
+        ``assembely_solution()`` typically returns the final output path, or a
+        dict/list of them. We walk the structure and keep strings that point at
+        a real file so the terminal output is captured even when the mtime
+        scanner misses it (e.g. the file was written outside ``OUTPUT_DIR``).
+        """
+        found: List[str] = []
+
+        def visit(v: Any) -> None:
+            if isinstance(v, str):
+                try:
+                    if os.path.isfile(v):
+                        found.append(os.path.normpath(os.path.abspath(v)))
+                except (OSError, ValueError):
+                    pass
+            elif isinstance(v, dict):
+                for item in v.values():
+                    visit(item)
+            elif isinstance(v, (list, tuple, set)):
+                for item in v:
+                    visit(item)
+
+        visit(value)
+        return found
+
+    @staticmethod
+    def _snapshot_tracked_mtimes(output_dir: str) -> Dict[str, float]:
+        """Map ``normalized path -> mtime`` for tracked output files under ``output_dir``."""
+        snapshot: Dict[str, float] = {}
         for ext in TRACKED_OUTPUT_EXTENSIONS:
             for fp in globmod.glob(os.path.join(output_dir, "**", ext), recursive=True):
                 try:
-                    before_mtimes[fp] = os.path.getmtime(fp)
+                    snapshot[os.path.normpath(fp)] = os.path.getmtime(fp)
                 except OSError:
                     continue
+        return snapshot
+
+    def _execute_assembly(self, code: str, output_dir: str) -> Dict[str, Any]:
+        self.increment_code_executions()
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Baseline of tracked files that existed before assembly ran. Seeded ONCE per
+        # run (before the first attempt) so files written by an earlier *failed* attempt
+        # are still reported as created by the repair/regen attempt that ultimately
+        # succeeds. Re-snapshotting per attempt would fold those files into the baseline
+        # and drop them from the artifacts — the "debug loses outputs" bug. Falls back to
+        # a local snapshot when no per-run baseline was seeded.
+        before_mtimes = (
+            self._output_baseline_mtimes
+            if self._output_baseline_mtimes is not None
+            else self._snapshot_tracked_mtimes(output_dir)
+        )
 
         def detect_created_files() -> List[str]:
             found = []
             for ext in TRACKED_OUTPUT_EXTENSIONS:
                 for fp in globmod.glob(os.path.join(output_dir, "**", ext), recursive=True):
+                    norm = os.path.normpath(fp)
                     try:
                         cur = os.path.getmtime(fp)
                     except OSError:
                         continue
-                    if fp not in before_mtimes or cur > before_mtimes[fp]:
-                        found.append(fp)
+                    if norm not in before_mtimes or cur > before_mtimes[norm]:
+                        found.append(norm)
             return sorted(set(found))
 
+        def merge_outputs(final_paths: List[str]) -> List[str]:
+            """Final-output paths (from the entry point's return) first, then any
+            other detected files, de-duplicated by normalized path."""
+            ordered: List[str] = []
+            seen: set[str] = set()
+            for p in final_paths + detect_created_files():
+                norm = os.path.normpath(p)
+                if norm not in seen:
+                    seen.add(norm)
+                    ordered.append(norm)
+            return ordered
+
+        # Strip the script's own ``assembely_solution()`` call so we can invoke it
+        # ourselves and capture the terminal node's return value (single execution).
+        exec_code, had_entrypoint = self._strip_entrypoint_call(code)
         stdout_capture = io.StringIO()
         exec_globals: Dict[str, Any] = {
             "__builtins__": __builtins__,
+            # Under bare exec(), an unset __name__ resolves to "builtins", so any
+            # ``if __name__ == "__main__":`` guard the LLM added (despite being told not
+            # to) silently evaluates False and the entry point never runs. Force it to
+            # "__main__" so such guards execute. We still strip the in-script call above
+            # and invoke the entry point ourselves, so this never double-executes.
+            "__name__": "__main__",
             "OUTPUT_DIR": output_dir,
-            "FINAL_OUTPUT_DIR": final_output_dir,
+            # Backward-compat alias: previously generated scripts may still reference
+            # FINAL_OUTPUT_DIR. Point it at OUTPUT_DIR so they keep running. New code
+            # is prompted to use OUTPUT_DIR only.
+            "FINAL_OUTPUT_DIR": output_dir,
         }
         prev_cwd = os.getcwd()
         try:
@@ -1084,13 +1188,19 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             except OSError:
                 pass
             try:
+                returned_value: Any = None
                 with contextlib.redirect_stdout(stdout_capture):
-                    exec(code, exec_globals)
+                    exec(exec_code, exec_globals)
+                    entrypoint = exec_globals.get("assembely_solution")
+                    if had_entrypoint and callable(entrypoint):
+                        returned_value = entrypoint()
+                final_paths = self._existing_paths_from_value(returned_value)
                 return {
                     "status": "completed",
                     "output": stdout_capture.getvalue(),
                     "code": code,
-                    "created_files": detect_created_files(),
+                    "created_files": merge_outputs(final_paths),
+                    "result_value": returned_value if isinstance(returned_value, (str, int, float, bool, dict, list)) else None,
                 }
             except Exception as err:
                 exc_type = type(err).__name__
@@ -1130,8 +1240,8 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             f"Your role: {ASSEMBLY_ROLE}\n\n"
             "The previous assembly program failed at runtime. Diagnose the failure and return a "
             "corrected, COMPLETE assembly program that resolves it. Keep the original structure "
-            "(all operation functions + an assembely_solution() entry point) and the OUTPUT_DIR / "
-            "FINAL_OUTPUT_DIR conventions. Reply with a single Python code block only.\n\n"
+            "(all operation functions + an assembely_solution() entry point) and the OUTPUT_DIR "
+            "convention. Reply with a single Python code block only.\n\n"
             f"User question/task: {task}\n\n"
             f"Error category: {error_class}\n"
             f"Exception type: {result.get('exception_type', '')}\n"
@@ -1150,7 +1260,6 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
         task: str,
         data_registry: List[Dict[str, Any]],
         out_dir: str,
-        final_dir: str,
         progress_callback: Optional[ProgressCallback],
     ) -> Optional[Dict[str, Any]]:
         self.increment_retries()
@@ -1182,7 +1291,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             message="I am re-executing the repaired assembly program.",
             data={"code_file": code_file},
         )
-        run = self._execute_assembly(repaired, out_dir, final_dir)
+        run = self._execute_assembly(repaired, out_dir)
         run["code_file"] = code_file
         run["code"] = repaired
         return run
@@ -1193,7 +1302,6 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
         task: str,
         data_registry: List[Dict[str, Any]],
         out_dir: str,
-        final_dir: str,
         progress_callback: Optional[ProgressCallback],
     ) -> Optional[Dict[str, Any]]:
         self.increment_retries()
@@ -1230,7 +1338,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             message="I am executing the regenerated assembly program.",
             data={"code_file": code_file},
         )
-        run = self._execute_assembly(regenerated, out_dir, final_dir)
+        run = self._execute_assembly(regenerated, out_dir)
         run["code_file"] = code_file
         run["code"] = regenerated
         if run.get("status") == "completed":
@@ -1266,9 +1374,9 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             "domain-specific libraries": ["networkx", "geopandas", "pandas", "matplotlib"],
         }
 
-    def _summary_text(self, result: Dict[str, Any], final_outputs: List[str], created: List[str]) -> str:
+    def _summary_text(self, result: Dict[str, Any], created: List[str]) -> str:
         if result.get("status") == "completed":
-            paths = final_outputs or created
+            paths = created
             if paths:
                 return (
                     f"Executed a {len(self.operations)}-operation workflow and produced "
@@ -1341,6 +1449,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
         self.assembly_prompt = None
         self.assembly_code = ""
         self.workflow_code = ""
+        self._output_baseline_mtimes = None
 
         self._emit_progress(
             progress_callback,
@@ -1359,10 +1468,9 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
                 progress_callback,
             )
 
-        # Task-scoped output directories
+        # Task-scoped output directory — every artifact (final and intermediate) lands here.
         task_id = uuid.uuid4().hex[:8]
         out_dir = str(self.ensure_directory(Path(self.output_dir) / task_id))
-        final_dir = str(self.ensure_directory(Path(out_dir) / "final_outputs"))
 
         # ── Stage 1: Data registry ────────────────────────────────────
         data_registry = self.request_parameters.get("data_registry")
@@ -1481,13 +1589,18 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
         Path(code_file).write_text(assembly_code, encoding="utf-8")
 
         # ── Stage 4: Execute (with repair + regen fallback) ───────────
+        # Seed the tracked-output baseline ONCE, before the first attempt, so that
+        # files written by a failed attempt are still attributed to the repair/regen
+        # attempt that ultimately succeeds (otherwise debugged runs drop artifacts).
+        self._output_baseline_mtimes = self._snapshot_tracked_mtimes(out_dir)
+
         self._emit_progress(
             progress_callback,
             stage="code_execution",
             message="I am executing the assembly program in the sandboxed environment.",
             data={"code_file": code_file},
         )
-        result = self._execute_assembly(assembly_code, out_dir, final_dir)
+        result = self._execute_assembly(assembly_code, out_dir)
         result["code_file"] = code_file
         result["code"] = assembly_code
 
@@ -1500,7 +1613,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
                 "code_file": code_file,
             })
             repaired = self._attempt_repair(
-                assembly_code, result, query, data_registry, out_dir, final_dir, progress_callback,
+                assembly_code, result, query, data_registry, out_dir, progress_callback,
             )
             if repaired:
                 repair_history.append({
@@ -1514,7 +1627,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
                     result = repaired
                 else:
                     regenerated = self._attempt_regenerate(
-                        repaired, query, data_registry, out_dir, final_dir, progress_callback,
+                        repaired, query, data_registry, out_dir, progress_callback,
                     )
                     if regenerated:
                         repair_history.append({
@@ -1527,7 +1640,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
                         result = regenerated
             else:
                 regenerated = self._attempt_regenerate(
-                    result, query, data_registry, out_dir, final_dir, progress_callback,
+                    result, query, data_registry, out_dir, progress_callback,
                 )
                 if regenerated:
                     repair_history.append({
@@ -1544,11 +1657,10 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
 
         # ── Build response ────────────────────────────────────────────
         created = result.get("created_files", []) or []
-        final_outputs = [p for p in created if p.startswith(final_dir)]
-        primary_output = final_outputs[0] if final_outputs else (created[0] if created else None)
-        self.set_artifact_count(len(final_outputs or created))
+        primary_output = created[0] if created else None
+        self.set_artifact_count(len(created))
 
-        summary = self._summary_text(result, final_outputs, created)
+        summary = self._summary_text(result, created)
         self._emit_progress(
             progress_callback,
             stage="complete",
@@ -1586,7 +1698,8 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
                     "summary": summary,
                     "status": result.get("status"),
                     "primary_artifact": primary_output,
-                    "dataset_paths": final_outputs or created,
+                    "dataset_paths": created,
+                    "result_value": result.get("result_value"),
                     "stdout": (result.get("output") or "")[:4000],
                 },
             },
@@ -1607,19 +1720,22 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
                     "assembly_code_file": code_file,
                     "workflow_graph_file": graph_path,
                     "workflow_graph_html": workflow_html_path,
+                    # Same path under a "*_file" key so the service layer relocates it
+                    # into the agent data dir and delivers it as a downloadable URL
+                    # artifact (the key above is kept for in-process callers).
+                    "workflow_graph_html_file": workflow_html_path,
                     "workflow_generator_code": workflow_code,
                 },
                 "Persisted Artifacts": {
-                    "paths": final_outputs or created,
-                    "final_output_dir": final_dir,
-                    "intermediate_output_dir": out_dir,
+                    "paths": created,
+                    "output_dir": out_dir,
                 },
             },
             "Validation": {
                 "status": "passed" if result.get("status") == "completed" else "failed",
                 "checks": [
                     f"Assembly execution status: {result.get('status')}",
-                    f"Final artifact files detected: {len(final_outputs or created)}",
+                    f"Artifact files detected: {len(created)}",
                 ],
             },
         }
@@ -1652,7 +1768,7 @@ document.addEventListener('keydown', e => {{ if (e.key === 'Escape') closePopup(
             "outputs": {
                 "text": summary,
                 "dataset_path": primary_output,
-                "dataset_paths": final_outputs or created,
+                "dataset_paths": created,
                 "dataset_size": {"type": "workflow_artifacts", "feature_count": None, "dimensions": None},
             },
             "metrics": {
