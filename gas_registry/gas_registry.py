@@ -74,6 +74,25 @@ def _fetch_json(base_url, params, timeout):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _provider_info(document):
+    provider = document.get("provider") if isinstance(document, dict) else {}
+    if not isinstance(provider, dict):
+        provider = {}
+    contacts = provider.get("contacts")
+    if isinstance(contacts, list) and contacts:
+        contact = contacts[0] or {}
+    else:
+        contact = provider.get("contact") or {}
+    if not isinstance(contact, dict):
+        contact = {}
+    return {
+        "name": provider.get("name"),
+        "website": provider.get("website"),
+        "contact_name": contact.get("name"),
+        "contact_email": contact.get("email"),
+    }
+
+
 def get_capabilities(base_url=DEFAULT_BASE_URL, timeout=30):
     """Fetch the GAS GetCapabilities document and return the list of agents.
 
@@ -85,6 +104,7 @@ def get_capabilities(base_url=DEFAULT_BASE_URL, timeout=30):
         "VERSION": "1.0.0",
         "REQUEST": "GetCapabilities",
     }, timeout)
+    server_provider = _provider_info(doc)
     out = []
     for agent in doc.get("agents", []):
         # New schema: agent_id (identifier) + DescribeAgent (link).
@@ -95,7 +115,14 @@ def get_capabilities(base_url=DEFAULT_BASE_URL, timeout=30):
                         or agent.get("describe_url"))
         if describe_url and describe_url.startswith("/"):
             describe_url = normalized_base_url.rstrip("/") + describe_url
-        out.append({"name": identifier, "describeUrl": describe_url})
+        out.append({
+            "name": identifier,
+            "describeUrl": describe_url,
+            "serverProviderName": server_provider.get("name"),
+            "serverProviderWebsite": server_provider.get("website"),
+            "serverProviderContactName": server_provider.get("contact_name"),
+            "serverProviderContactEmail": server_provider.get("contact_email"),
+        })
     return out
 
 
@@ -250,6 +277,10 @@ def _extracted_columns(agent_info):
     return {
         "agent_id": prof.get("agent_id"),
         "source_base_url": None,
+        "server_provider_name": None,
+        "server_provider_website": None,
+        "server_provider_contact_name": None,
+        "server_provider_contact_email": None,
         "description": prof.get("description"),
         "version": prof.get("version"),
         "agent_base_url": prof.get("base_url"),
@@ -290,7 +321,8 @@ def _extracted_columns(agent_info):
 
 
 def save_agent_to_db(agent_name, db_path=DEFAULT_DB_PATH, describe_url=None,
-                     base_url=DEFAULT_BASE_URL, timeout=30):
+                     base_url=DEFAULT_BASE_URL, timeout=30,
+                     server_provider=None):
     """Fetch one agent's profile and upsert it into the SQLite database.
 
     Re-running for the same agent replaces the existing row (latest wins).
@@ -303,6 +335,11 @@ def save_agent_to_db(agent_name, db_path=DEFAULT_DB_PATH, describe_url=None,
     cols = _extracted_columns(agent_info)
     agent_id = cols.get("agent_id") or agent_name
     cols["source_base_url"] = source_base_url
+    if isinstance(server_provider, dict):
+        cols["server_provider_name"] = server_provider.get("name")
+        cols["server_provider_website"] = server_provider.get("website")
+        cols["server_provider_contact_name"] = server_provider.get("contact_name")
+        cols["server_provider_contact_email"] = server_provider.get("contact_email")
     row_name = _registry_key(agent_id, source_base_url)
     if describe_url is None:
         describe_url = (
@@ -350,9 +387,16 @@ def save_all_agents_to_db(db_path=DEFAULT_DB_PATH, base_url=DEFAULT_BASE_URL,
     """
     stored = []
     for agent in get_capabilities(base_url=base_url, timeout=timeout):
+        server_provider = {
+            "name": agent.get("serverProviderName"),
+            "website": agent.get("serverProviderWebsite"),
+            "contact_name": agent.get("serverProviderContactName"),
+            "contact_email": agent.get("serverProviderContactEmail"),
+        }
         save_agent_to_db(agent["name"], db_path=db_path,
                          describe_url=agent.get("describeUrl"),
-                         base_url=base_url, timeout=timeout)
+                         base_url=base_url, timeout=timeout,
+                         server_provider=server_provider)
         stored.append(agent["name"])
     return stored
 

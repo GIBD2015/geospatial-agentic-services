@@ -57,7 +57,9 @@ def _list_agents(db_path: str, server: str | None = None) -> list[dict]:
     conn = sqlite3.connect(db_path)
     try:
         sql = """
-            SELECT name, agent_id, source_base_url, describe_url, description
+            SELECT name, agent_id, source_base_url, describe_url, description,
+                   server_provider_name, server_provider_website,
+                   server_provider_contact_name, server_provider_contact_email
             FROM agents
         """
         params = []
@@ -76,10 +78,16 @@ def _list_agents(db_path: str, server: str | None = None) -> list[dict]:
             "agent_id": agent_id or registry_id,
             "source_base_url": source_base_url,
             "description": description,
+            "server_provider_name": server_provider_name,
+            "server_provider_website": server_provider_website,
+            "server_provider_contact_name": server_provider_contact_name,
+            "server_provider_contact_email": server_provider_contact_email,
             "detailUrl": _describe_url(registry_id),
             "describeUrl": _source_describe_url(describe_url, source_base_url, agent_id or registry_id),
         }
-        for registry_id, agent_id, source_base_url, describe_url, description in rows
+        for registry_id, agent_id, source_base_url, describe_url, description,
+            server_provider_name, server_provider_website,
+            server_provider_contact_name, server_provider_contact_email in rows
     ]
 
 
@@ -89,6 +97,10 @@ def _list_agents_for_legacy_ui(db_path: str) -> list[dict]:
         item = dict(agent)
         item["name"] = agent["registry_id"]
         item["sourceBaseUrl"] = agent["source_base_url"]
+        item["serverProviderName"] = agent.get("server_provider_name")
+        item["serverProviderWebsite"] = agent.get("server_provider_website")
+        item["serverProviderContactName"] = agent.get("server_provider_contact_name")
+        item["serverProviderContactEmail"] = agent.get("server_provider_contact_email")
         item["DescribeAgent"] = agent["detailUrl"]
         agents.append(item)
     return agents
@@ -110,7 +122,11 @@ def _list_servers(db_path: str) -> list[dict]:
     try:
         rows = conn.execute(
             """
-            SELECT source_base_url, COUNT(*) AS agent_count, MAX(fetched_at) AS last_fetched_at
+            SELECT source_base_url, COUNT(*) AS agent_count, MAX(fetched_at) AS last_fetched_at,
+                   MAX(server_provider_name) AS server_provider_name,
+                   MAX(server_provider_website) AS server_provider_website,
+                   MAX(server_provider_contact_name) AS server_provider_contact_name,
+                   MAX(server_provider_contact_email) AS server_provider_contact_email
             FROM agents
             WHERE source_base_url IS NOT NULL AND source_base_url != ''
             GROUP BY source_base_url
@@ -124,8 +140,14 @@ def _list_servers(db_path: str) -> list[dict]:
             "source_base_url": source_base_url,
             "agent_count": agent_count,
             "last_fetched_at": last_fetched_at,
+            "server_provider_name": server_provider_name,
+            "server_provider_website": server_provider_website,
+            "server_provider_contact_name": server_provider_contact_name,
+            "server_provider_contact_email": server_provider_contact_email,
         }
-        for source_base_url, agent_count, last_fetched_at in rows
+        for source_base_url, agent_count, last_fetched_at,
+            server_provider_name, server_provider_website,
+            server_provider_contact_name, server_provider_contact_email in rows
     ]
 
 
@@ -402,7 +424,12 @@ def gas_search():
             where.append(f"a.{name} = ?")
             params.append(value)
 
-    sql = "SELECT a.name, a.agent_id, a.source_base_url, a.describe_url, a.description FROM agents a"
+    sql = """
+        SELECT a.name, a.agent_id, a.source_base_url, a.describe_url, a.description,
+               a.server_provider_name, a.server_provider_website,
+               a.server_provider_contact_name, a.server_provider_contact_email
+        FROM agents a
+    """
     if where:
         sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY a.name"
@@ -415,18 +442,36 @@ def gas_search():
 
     legacy_ui_response = request.path.endswith("/api/gas/search")
     agents = []
-    for registry_id, agent_id, source_base_url, describe_url, description in rows:
+    for (
+        registry_id,
+        agent_id,
+        source_base_url,
+        describe_url,
+        description,
+        server_provider_name,
+        server_provider_website,
+        server_provider_contact_name,
+        server_provider_contact_email,
+    ) in rows:
         item = {
             "registry_id": registry_id,
             "agent_id": agent_id or registry_id,
             "source_base_url": source_base_url,
             "description": description,
+            "server_provider_name": server_provider_name,
+            "server_provider_website": server_provider_website,
+            "server_provider_contact_name": server_provider_contact_name,
+            "server_provider_contact_email": server_provider_contact_email,
             "detailUrl": _describe_url(registry_id),
             "describeUrl": _source_describe_url(describe_url, source_base_url, agent_id or registry_id),
         }
         if legacy_ui_response:
             item["name"] = registry_id
             item["sourceBaseUrl"] = source_base_url
+            item["serverProviderName"] = server_provider_name
+            item["serverProviderWebsite"] = server_provider_website
+            item["serverProviderContactName"] = server_provider_contact_name
+            item["serverProviderContactEmail"] = server_provider_contact_email
         agents.append(item)
 
     response_payload = {
@@ -481,6 +526,10 @@ def gas_list_remote():
             "name": name,
             "describeUrl": agent.get("describeUrl"),
             "sourceBaseUrl": base_url,
+            "serverProviderName": agent.get("serverProviderName"),
+            "serverProviderWebsite": agent.get("serverProviderWebsite"),
+            "serverProviderContactName": agent.get("serverProviderContactName"),
+            "serverProviderContactEmail": agent.get("serverProviderContactEmail"),
             "displayName": "",
             "description": "",
             "version": "",
@@ -534,18 +583,26 @@ def gas_register_selected():
     remote_agents = {}
     try:
         remote_agents = {
-            agent.get("name"): agent.get("describeUrl")
+            agent.get("name"): agent
             for agent in gas_registry.get_capabilities(base_url=base_url)
         }
     except Exception:
         remote_agents = {}
     for name in names:
+        remote_agent = remote_agents.get(name) or {}
+        server_provider = {
+            "name": remote_agent.get("serverProviderName"),
+            "website": remote_agent.get("serverProviderWebsite"),
+            "contact_name": remote_agent.get("serverProviderContactName"),
+            "contact_email": remote_agent.get("serverProviderContactEmail"),
+        }
         try:
             gas_registry.save_agent_to_db(
                 name,
                 db_path=DB_PATH,
-                describe_url=remote_agents.get(name),
+                describe_url=remote_agent.get("describeUrl"),
                 base_url=base_url,
+                server_provider=server_provider,
             )
             registered.append(name)
         except Exception as exc:

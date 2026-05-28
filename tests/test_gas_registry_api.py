@@ -52,6 +52,12 @@ def _registry_client(monkeypatch):
         "mapping_agent",
         db_path=str(db_path),
         base_url="https://example.test",
+        server_provider={
+            "name": "Example GAS Lab",
+            "website": "https://example.test/lab",
+            "contact_name": "Example Contact",
+            "contact_email": "contact@example.test",
+        },
     )
     return registry_app.app.test_client()
 
@@ -77,10 +83,18 @@ def _patch_remote_server(monkeypatch):
             {
                 "name": "mapping_agent",
                 "describeUrl": "https://example.test/?SERVICE=GAS&VERSION=1.0.0&REQUEST=DescribeAgent&agent_id=mapping_agent",
+                "serverProviderName": "Example GAS Lab",
+                "serverProviderWebsite": "https://example.test/lab",
+                "serverProviderContactName": "Example Contact",
+                "serverProviderContactEmail": "contact@example.test",
             },
             {
                 "name": "raster_agent",
                 "describeUrl": "https://example.test/?SERVICE=GAS&VERSION=1.0.0&REQUEST=DescribeAgent&agent_id=raster_agent",
+                "serverProviderName": "Example GAS Lab",
+                "serverProviderWebsite": "https://example.test/lab",
+                "serverProviderContactName": "Example Contact",
+                "serverProviderContactEmail": "contact@example.test",
             },
         ],
     )
@@ -118,6 +132,10 @@ def test_registry_agents_api_lists_registered_agents(monkeypatch):
     assert "sourceBaseUrl" not in payload["agents"][0]
     assert payload["agents"][0]["detailUrl"].startswith("/registry/api/agents/")
     assert payload["agents"][0]["describeUrl"].startswith("https://example.test/?")
+    assert payload["agents"][0]["server_provider_name"] == "Example GAS Lab"
+    assert payload["agents"][0]["server_provider_website"] == "https://example.test/lab"
+    assert payload["agents"][0]["server_provider_contact_name"] == "Example Contact"
+    assert payload["agents"][0]["server_provider_contact_email"] == "contact@example.test"
 
 
 def test_registry_agents_api_filters_by_server(monkeypatch):
@@ -286,6 +304,10 @@ def test_registry_legacy_ui_kvp_api_keeps_name_alias(monkeypatch):
     assert response.status_code == 200
     assert payload["agents"][0]["name"].startswith("mapping_agent@")
     assert payload["agents"][0]["sourceBaseUrl"] == "https://example.test"
+    assert payload["agents"][0]["serverProviderName"] == "Example GAS Lab"
+    assert payload["agents"][0]["serverProviderWebsite"] == "https://example.test/lab"
+    assert payload["agents"][0]["serverProviderContactName"] == "Example Contact"
+    assert payload["agents"][0]["serverProviderContactEmail"] == "contact@example.test"
 
 
 def test_registry_legacy_ui_search_keeps_name_alias(monkeypatch):
@@ -346,6 +368,10 @@ def test_registry_servers_api_lists_registered_servers(monkeypatch):
     assert payload["count"] == 1
     assert payload["servers"][0]["source_base_url"] == "https://example.test"
     assert payload["servers"][0]["agent_count"] == 1
+    assert payload["servers"][0]["server_provider_name"] == "Example GAS Lab"
+    assert payload["servers"][0]["server_provider_website"] == "https://example.test/lab"
+    assert payload["servers"][0]["server_provider_contact_name"] == "Example Contact"
+    assert payload["servers"][0]["server_provider_contact_email"] == "contact@example.test"
 
 
 def test_registry_servers_api_accepts_trailing_slash(monkeypatch):
@@ -482,6 +508,9 @@ def test_registry_register_selected_agents_api_uses_post(monkeypatch):
     assert response.status_code == 200
     assert payload["status"] == "success"
     assert payload["registered"] == ["raster_agent"]
+    agents = client.get("/registry/api/agents").get_json()["agents"]
+    registered = [agent for agent in agents if agent["agent_id"] == "raster_agent"][0]
+    assert registered["server_provider_name"] == "Example GAS Lab"
 
 
 def test_registry_register_selected_agents_api_accepts_trailing_slash(monkeypatch):

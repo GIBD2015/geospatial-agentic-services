@@ -169,6 +169,7 @@
 
         .title-group {
             flex: 1;
+            min-width: 0;
         }
 
         .title {
@@ -176,6 +177,9 @@
             font-weight: 600;
             margin: 0;
             line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .version {
@@ -194,6 +198,40 @@
             white-space: nowrap;
             max-width: 100%;
         }
+        .server-url a {
+            color: var(--accent-color);
+            font-weight: 400;
+            text-decoration: none;
+        }
+        .server-url a:hover { text-decoration: underline; }
+        .server-meta-label {
+            color: #5f6368;
+            font-weight: 400;
+        }
+        .server-provider {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-size: 12px;
+            color: #5f6368;
+            margin: 4px 0 0 0;
+            line-height: 1.3;
+            overflow: visible;
+            white-space: normal;
+            max-width: 100%;
+        }
+        .server-provider-label {
+            flex: 0 0 auto;
+        }
+        .server-provider a {
+            min-width: 0;
+            overflow: visible;
+            white-space: normal;
+            color: var(--accent-color);
+            font-weight: 400;
+            text-decoration: none;
+        }
+        .server-provider a:hover { text-decoration: underline; }
 
         .get-btn {
             background-color: var(--btn-bg);
@@ -324,7 +362,7 @@
         .modal-skill:first-child { border-top: none; padding-top: 0; }
         .modal-skill-name { font-weight: 600; margin: 0 0 4px; font-size: 15px; }
         .modal-skill-desc { font-size: 14px; color: #515154; margin: 0; line-height: 1.45; }
-        .modal-link { display: inline-block; margin-top: 4px; color: var(--accent-color); font-weight: 600; font-size: 13px; text-decoration: none; }
+        .modal-link { display: inline-block; margin-top: 4px; color: var(--accent-color); font-weight: 400; font-size: 13px; text-decoration: none; }
         .modal-link:hover { text-decoration: underline; }
         /* Capability badges (provenance / reproducibility / validation) */
         .modal-badges { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -376,20 +414,18 @@
             margin-top: 0;
             line-height: 1.28;
         }
-        /* Footer meta (agent_id / DescribeAgent URL / default_model) */
-        .modal-footer-meta {
-            margin-top: 24px; padding-top: 16px;
-            border-top: 1px solid #e5e5ea;
-            font-size: 12px; color: var(--text-secondary);
-            display: grid; grid-template-columns: max-content 1fr;
-            row-gap: 6px; column-gap: 12px;
-            overflow-wrap: anywhere; word-break: break-word;
+        .modal-section.provider-section {
+            margin-top: 20px;
         }
-        .modal-footer-meta dt { font-weight: 600; color: #1d1d1f; }
-        .modal-footer-meta dd { margin: 0; }
-        .modal-footer-meta a { color: var(--accent-color); text-decoration: none; }
-        .modal-footer-meta a:hover { text-decoration: underline; }
-
+        .provider-section .modal-facts {
+            font-size: 12px;
+            line-height: 1.22;
+            gap: 3px 12px;
+        }
+        .provider-section .modal-facts code,
+        .provider-section .modal-link {
+            font-size: 12px;
+        }
         /* Action bar (search + register) */
         .action-bar {
             max-width: 1200px;
@@ -1369,6 +1405,18 @@
                 return String(value);
             }
 
+            function providerLinkHtml(name, website, className) {
+                var label = name || website || "";
+                if (!label) return "";
+                if (website) {
+                    var classAttr = className === ""
+                        ? ""
+                        : ' class="' + escapeHtml(className || "modal-link") + '"';
+                    return '<a' + classAttr + ' href="' + escapeHtml(website) + '" target="_blank" rel="noopener">' + escapeHtml(label) + '</a>';
+                }
+                return escapeHtml(label);
+            }
+
             function factsHtml(title, rows) {
                 var filtered = rows.filter(function(row) {
                     return row && row[1] !== undefined && row[1] !== null && row[1] !== "" &&
@@ -1451,26 +1499,83 @@
                 ]);
             }
 
-            function providerHtml(provider, contact) {
+            function providerHtml(provider, contact, title) {
                 provider = provider || {};
                 contact = contact || {};
                 if (!provider.name && !provider.website && !contact.name && !contact.email) return "";
-                var providerName = provider.website
-                    ? '<a class="modal-link" href="' + escapeHtml(provider.website) + '" target="_blank" rel="noopener">' + escapeHtml(provider.name || provider.website) + '</a>'
-                    : escapeHtml(provider.name || "");
+                var providerName = providerLinkHtml(provider.name, provider.website);
+                var contactText = [contact.name, contact.email].filter(Boolean).join(", ");
                 var rows = [];
                 if (providerName) rows.push(["Provider", providerName]);
-                if (contact.name) rows.push(["Contact", escapeHtml(contact.name)]);
-                if (contact.email) {
-                    rows.push([
-                        "Email",
-                        escapeHtml(contact.email)
-                    ]);
-                }
+                if (contactText) rows.push(["Contact", escapeHtml(contactText)]);
                 var body = rows.map(function(row) {
                     return '<dt>' + escapeHtml(row[0]) + '</dt><dd>' + row[1] + '</dd>';
                 }).join("");
-                return '<div class="modal-section"><h4>Provider</h4>' +
+                return '<div class="modal-section"><h4>' + escapeHtml(title || "Provider") + '</h4>' +
+                    '<dl class="modal-facts">' + body + '</dl></div>';
+            }
+
+            function serverProviderHtml(agentEntry) {
+                var provider = {
+                    name: agentEntry.server_provider_name || agentEntry.serverProviderName || "",
+                    website: agentEntry.server_provider_website || agentEntry.serverProviderWebsite || ""
+                };
+                var contact = {
+                    name: agentEntry.server_provider_contact_name || agentEntry.serverProviderContactName || "",
+                    email: agentEntry.server_provider_contact_email || agentEntry.serverProviderContactEmail || ""
+                };
+                var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                var getCapabilitiesUrl = sourceServer
+                    ? sourceServer.replace(/\/+$/, "") + "/?SERVICE=GAS&VERSION=1.0.0&REQUEST=GetCapabilities"
+                    : "";
+                var providerName = providerLinkHtml(provider.name, provider.website);
+                var contactText = [contact.name, contact.email].filter(Boolean).join(", ");
+                var rows = [];
+                if (providerName) rows.push(["Provider", providerName]);
+                if (getCapabilitiesUrl) {
+                    rows.push([
+                        "GetCapabilities URL",
+                        '<a class="modal-link" href="' + escapeHtml(getCapabilitiesUrl) + '" target="_blank" rel="noopener">' +
+                        escapeHtml(getCapabilitiesUrl) +
+                        '</a>'
+                    ]);
+                }
+                if (contactText) rows.push(["Contact", escapeHtml(contactText)]);
+                if (!rows.length) return "";
+                var body = rows.map(function(row) {
+                    return '<dt>' + escapeHtml(row[0]) + '</dt><dd>' + row[1] + '</dd>';
+                }).join("");
+                return '<div class="modal-section provider-section"><h4>GAS Server Provider</h4>' +
+                    '<dl class="modal-facts">' + body + '</dl></div>';
+            }
+
+            function agentProviderHtml(provider, contact, profile, agentEntry) {
+                provider = provider || {};
+                contact = contact || {};
+                profile = profile || {};
+                agentEntry = agentEntry || {};
+                var rows = [];
+                var providerName = providerLinkHtml(provider.name, provider.website);
+                var agentId = profile.agent_id || agentEntry.name || "";
+                var describeUrl = agentEntry.describeUrl || "";
+                var contactText = [contact.name, contact.email].filter(Boolean).join(", ");
+                if (providerName) rows.push(["Provider", providerName]);
+                if (agentId) rows.push(["Agent ID", '<code>' + escapeHtml(agentId) + '</code>']);
+                if (describeUrl) {
+                    rows.push([
+                        "DescribeAgent URL",
+                        '<a class="modal-link" href="' + escapeHtml(describeUrl) + '" target="_blank" rel="noopener">' +
+                        escapeHtml(describeUrl) +
+                        '</a>'
+                    ]);
+                }
+                if (profile.default_model) rows.push(["Default model", '<code>' + escapeHtml(profile.default_model) + '</code>']);
+                if (contactText) rows.push(["Contact", escapeHtml(contactText)]);
+                if (!rows.length) return "";
+                var body = rows.map(function(row) {
+                    return '<dt>' + escapeHtml(row[0]) + '</dt><dd>' + row[1] + '</dd>';
+                }).join("");
+                return '<div class="modal-section provider-section"><h4>Agent Provider</h4>' +
                     '<dl class="modal-facts">' + body + '</dl></div>';
             }
 
@@ -1532,22 +1637,6 @@
                 return html;
             }
 
-            function footerMetaHtml(profile, agentEntry) {
-                var items = [];
-                var agentId = profile.agent_id || agentEntry.name;
-                var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
-                var describeUrl = agentEntry.describeUrl || "";
-                if (agentId)             items.push(["Agent ID",      '<code>' + escapeHtml(agentId) + '</code>']);
-                if (sourceServer)        items.push(["GAS Server",     '<a href="' + escapeHtml(sourceServer) + '" target="_blank" rel="noopener">' + escapeHtml(sourceServer) + '</a>']);
-                if (describeUrl)         items.push(["DescribeAgent URL", '<a href="' + escapeHtml(describeUrl) + '" target="_blank" rel="noopener">' + escapeHtml(describeUrl) + '</a>']);
-                if (profile.default_model) items.push(["Default model", '<code>' + escapeHtml(profile.default_model) + '</code>']);
-                if (!items.length) return "";
-                var rows = items.map(function(p) {
-                    return '<dt>' + escapeHtml(p[0]) + '</dt><dd>' + p[1] + '</dd>';
-                }).join("");
-                return '<dl class="modal-footer-meta">' + rows + '</dl>';
-            }
-
             function openModal(agentEntry, detail) {
                 var profile = (detail && detail.profile) || {};
                 var slug = profile.agent_id || agentEntry.name || profile.name || "";
@@ -1588,8 +1677,8 @@
                     (metaParts.length ? '<p class="modal-meta">' + metaParts.join(" · ") + '</p>' : '') +
                     '<p class="modal-description">' + escapeHtml(description) + '</p>';
 
-                html += providerHtml(provider, contact);
-                html += footerMetaHtml(profile, agentEntry);
+                html += serverProviderHtml(agentEntry);
+                html += agentProviderHtml(provider, contact, profile, agentEntry);
 
                 // Keywords (new top-level field).
                 if (keywords.length) {
@@ -1654,6 +1743,21 @@
                 var version = (detail && detail.profile && detail.profile.version) || "";
                 var description = (detail && detail.profile && detail.profile.description) || "";
                 var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                var serverProviderName = agentEntry.server_provider_name || agentEntry.serverProviderName || "";
+                var serverProviderWebsite = agentEntry.server_provider_website || agentEntry.serverProviderWebsite || "";
+                var serverMeta = "";
+                if (sourceServer) {
+                    serverMeta += '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' +
+                        '<span class="server-meta-label">GAS server:</span> ' +
+                        '<a href="' + escapeHtml(sourceServer) + '" target="_blank" rel="noopener">' + escapeHtml(sourceServer) + '</a>' +
+                        '</p>';
+                }
+                if (serverProviderName || serverProviderWebsite) {
+                    serverMeta += '<p class="server-provider" title="' + escapeHtml(serverProviderName || serverProviderWebsite) + '">' +
+                        '<span class="server-provider-label">Provider:</span>' +
+                        providerLinkHtml(serverProviderName, serverProviderWebsite, "") +
+                      '</p>';
+                }
                 var hasDetail = !!(detail && detail.profile);
 
                 var article = document.createElement("article");
@@ -1667,7 +1771,7 @@
                         '<div class="title-group">' +
                             '<h3 class="title' + (hasDetail ? ' clickable' : '') + '" title="' + (hasDetail ? 'Click for full details' : '') + '">' + escapeHtml(title) + '</h3>' +
                             (version ? '<p class="version">Version ' + escapeHtml(version) + '</p>' : '') +
-                            (sourceServer ? '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' + escapeHtml(sourceServer) + '</p>' : '') +
+                            serverMeta +
                         '</div>' +
                     '</div>' +
                     '<div class="divider"></div>' +
@@ -1692,6 +1796,21 @@
                 var slug = agentEntry.name || "";
                 var title = toDisplayTitle(slug);
                 var sourceServer = agentEntry.source_base_url || agentEntry.sourceBaseUrl || "";
+                var serverProviderName = agentEntry.server_provider_name || agentEntry.serverProviderName || "";
+                var serverProviderWebsite = agentEntry.server_provider_website || agentEntry.serverProviderWebsite || "";
+                var serverMeta = "";
+                if (sourceServer) {
+                    serverMeta += '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' +
+                        '<span class="server-meta-label">GAS server:</span> ' +
+                        '<a href="' + escapeHtml(sourceServer) + '" target="_blank" rel="noopener">' + escapeHtml(sourceServer) + '</a>' +
+                        '</p>';
+                }
+                if (serverProviderName || serverProviderWebsite) {
+                    serverMeta += '<p class="server-provider" title="' + escapeHtml(serverProviderName || serverProviderWebsite) + '">' +
+                        '<span class="server-provider-label">Provider:</span>' +
+                        providerLinkHtml(serverProviderName, serverProviderWebsite, "") +
+                      '</p>';
+                }
                 var article = document.createElement("article");
                 article.className = "card";
                 article.innerHTML =
@@ -1703,7 +1822,7 @@
                         '<div class="title-group">' +
                             '<h3 class="title">' + escapeHtml(title) + '</h3>' +
                             '<p class="version">Unavailable</p>' +
-                            (sourceServer ? '<p class="server-url" title="' + escapeHtml(sourceServer) + '">' + escapeHtml(sourceServer) + '</p>' : '') +
+                            serverMeta +
                         '</div>' +
                     '</div>' +
                     '<div class="divider"></div>' +
@@ -1870,6 +1989,11 @@
                 if (detail && detail.profile) {
                     parts.push(detail.profile.description || "");
                     parts.push(detail.profile.agent_type || "");
+                }
+                if (entry) {
+                    parts.push(entry.server_provider_name || entry.serverProviderName || "");
+                    parts.push(entry.server_provider_website || entry.serverProviderWebsite || "");
+                    parts.push(entry.source_base_url || entry.sourceBaseUrl || "");
                 }
                 if (detail && detail.skills) {
                     detail.skills.forEach(function(s) {
