@@ -12,7 +12,7 @@ the Geospatial Agentic Services (GAS) framework. GAS focuses on geospatial
 interoperability in the era of autonomous GIS and geospatial AI agents. Its goal
 is to make geospatial agents, their capabilities, and workflows easier to
 describe, discover, invoke, compose, validate, and reuse across different
-platforms.
+platforms. 
 
 GAS does not aim to prescribe how geospatial agents should be designed, how
 they should reason, or how general agentic systems should be built. It also
