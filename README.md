@@ -15,11 +15,11 @@ describe, discover, invoke, compose, validate, and reuse across different
 platforms. 
 
 GAS does not aim to prescribe how geospatial agents should be designed, how
-they should reason, or how general agentic systems should be built. It also
-does not assume that all geospatial agents must follow one specific
-architecture, protocol, or implementation pattern. Instead, GAS focuses on the
-interoperability layer needed when heterogeneous geospatial agents and services
-need to work together.
+they should reason, how their performance should be improved, or how general
+agentic systems should be built. It also does not assume that all geospatial
+agents must follow one specific architecture, protocol, or implementation
+pattern. Instead, GAS focuses on the interoperability layer needed when
+heterogeneous geospatial agents and services need to work together.
 
 The main component of this repository is a GAS server that publishes
 geospatial agents as discoverable web services through standard
