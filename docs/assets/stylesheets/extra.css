@@ -22,7 +22,18 @@
 }
 
 .gas-header-source {
-  margin-right: 0.5rem;
+  margin-left: auto;
+  margin-right: 0.15rem;
+  width: auto;
+}
+
+.gas-header-source .md-source {
+  width: auto;
+  padding-right: 0.4rem;
+}
+
+.gas-header-source + .md-header__source {
+  margin-left: 0;
 }
 
 .md-content h2 {
