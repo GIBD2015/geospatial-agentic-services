@@ -16,14 +16,12 @@ implementation.
 
 The current implementation defines these public JSON interfaces:
 
-```text
-gas_server/capabilities/capabilities.json
-gas_server/capabilities/{agent_id}.json
-gas_server/schemas/capabilities.schema.json
-gas_server/schemas/describe_agent.schema.json
-gas_server/schemas/execute_task_request.schema.json
-gas_server/schemas/task_response.schema.json
-```
+- [gas_server/capabilities/capabilities.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/capabilities.json)
+- [gas_server/capabilities/{agent_id}.json](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/capabilities)
+- [gas_server/schemas/capabilities.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/capabilities.schema.json)
+- [gas_server/schemas/describe_agent.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/describe_agent.schema.json)
+- [gas_server/schemas/execute_task_request.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/execute_task_request.schema.json)
+- [gas_server/schemas/task_response.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/task_response.schema.json)
 
 `capabilities.json` and each `{agent_id}.json` file are service documents.
 The files in `gas_server/schemas` define the expected structure of those

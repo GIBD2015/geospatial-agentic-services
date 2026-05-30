@@ -18,6 +18,7 @@ notebooks, applications, GIS workflows, or AI orchestrators.
 - [GAS Interfaces](gas_interfaces.md)
 - [GAS Registry](gas_registry.md)
 - [Included Agents](included_agents.md)
+- [Example notebooks](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/examples_for_using_gas_services)
 
 ### Add A Geospatial Agentic Service
 
@@ -54,3 +55,15 @@ client SDK, schemas, examples, tests, or documentation.
 - [GAS Registry](http://geospatial-agentic-services.online/registry)
 - [GAS paper](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence)
 - [GAS Client on PyPI](https://pypi.org/project/gas-client/)
+
+## Example Notebooks
+
+The example notebooks live in the GitHub repository and demonstrate raw HTTP
+requests, client SDK usage, streamed execution, distributed service chains, and
+multi-agent workflows.
+
+- [Notebook folder](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/examples_for_using_gas_services)
+- [Raw HTTP usage](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/examples_for_using_gas_services/gas_raw_requests_usage.ipynb)
+- [Streaming examples](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/examples_for_using_gas_services/agents_streaming_examples.ipynb)
+- [Workflow planning agent demo](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/examples_for_using_gas_services/geospatial_workflow_planning_agent_demo.ipynb)
+- [Distributed hospital mapping workflow](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/examples_for_using_gas_services/hospital_mapping_with_distributed_agents_and_multiple_request_modes.ipynb)

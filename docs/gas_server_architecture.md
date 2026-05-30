@@ -166,6 +166,17 @@ Output/
 tests/
 ```
 
+Browse these source areas on GitHub:
+
+- [gas_server/agents](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/agents)
+- [gas_server/services](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/services)
+- [gas_server/capabilities](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/capabilities)
+- [gas_server/schemas](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/schemas)
+- [gas_server/core](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/core)
+- [gas_client](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_client)
+- [gas_registry](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_registry)
+- [examples_for_using_gas_services](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/examples_for_using_gas_services)
+
 ### `gas_server/agents`
 
 This folder contains the actual agent implementations. Each agent is a Python
@@ -173,13 +184,11 @@ class that inherits from `GeoAgent`.
 
 For example:
 
-```text
-gas_server/agents/web_mapping_app_agent.py
-gas_server/agents/spatial_statistics_agent.py
-gas_server/agents/spatial_analysis_agent.py
-gas_server/agents/exploratory_spatial_data_analysis_agent.py
-gas_server/agents/geospatial_data_retrieval_agent.py
-```
+- [web_mapping_app_agent.py](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/web_mapping_app_agent.py)
+- [spatial_statistics_agent.py](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/spatial_statistics_agent.py)
+- [spatial_analysis_agent.py](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/spatial_analysis_agent.py)
+- [exploratory_spatial_data_analysis_agent.py](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/exploratory_spatial_data_analysis_agent.py)
+- [geospatial_data_retrieval_agent.py](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/geospatial_data_retrieval_agent.py)
 
 Agent files contain the domain logic: geospatial analysis, data retrieval,
 mapping, PySAL modeling, LLM-guided code generation, validation, report
@@ -202,9 +211,7 @@ is intentionally tiny. Its job is to publish an agent class as a GAS service.
 
 For example:
 
-```text
-gas_server/services/web_mapping_app_agent_service.py
-```
+- [web_mapping_app_agent_service.py](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/web_mapping_app_agent_service.py)
 
 Each service file imports the agent class and registers it:
 
@@ -223,13 +230,11 @@ the import and registration line.
 
 This folder contains the public service descriptions.
 
-```text
-gas_server/capabilities/capabilities.json
-gas_server/capabilities/web_mapping_app_agent.json
-gas_server/capabilities/spatial_statistics_agent.json
-gas_server/capabilities/spatial_analysis_agent.json
-gas_server/capabilities/exploratory_spatial_data_analysis_agent.json
-```
+- [capabilities.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/capabilities.json)
+- [web_mapping_app_agent.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/web_mapping_app_agent.json)
+- [spatial_statistics_agent.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/spatial_statistics_agent.json)
+- [spatial_analysis_agent.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/spatial_analysis_agent.json)
+- [exploratory_spatial_data_analysis_agent.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/exploratory_spatial_data_analysis_agent.json)
 
 `capabilities.json` is the server-level capability document. It helps
 clients discover the available agent services.
@@ -270,12 +275,10 @@ see [development_and_deployment_environment.md](development_and_deployment_envir
 
 This folder contains JSON Schemas for public GAS documents.
 
-```text
-gas_server/schemas/capabilities.schema.json
-gas_server/schemas/describe_agent.schema.json
-gas_server/schemas/execute_task_request.schema.json
-gas_server/schemas/task_response.schema.json
-```
+- [capabilities.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/capabilities.schema.json)
+- [describe_agent.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/describe_agent.schema.json)
+- [execute_task_request.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/execute_task_request.schema.json)
+- [task_response.schema.json](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/schemas/task_response.schema.json)
 
 The tests validate capability documents and standard task responses against
 these schemas. This supports the longer-term goal of making GAS documents more

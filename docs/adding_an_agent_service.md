@@ -21,11 +21,12 @@ See [included_agents.md](included_agents.md) for a catalog of these examples.
 Adding a new agent service is lightweight. In the common case,
 you add three small pieces:
 
-```text
-1. Agent implementation:  gas_server/agents/my_new_agent.py
-2. Service wrapper:       gas_server/services/my_new_agent_service.py
-3. Capability document:   gas_server/capabilities/my_new_agent.json
-```
+1. Agent implementation:
+   [gas_server/agents/my_new_agent.py](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/agents)
+2. Service wrapper:
+   [gas_server/services/my_new_agent_service.py](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/services)
+3. Capability document:
+   [gas_server/capabilities/my_new_agent.json](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/capabilities)
 
 The GAS server handles the repetitive server work: routing, request
 parsing, input dataset materialization, sync/async/stream modes, task status,
@@ -46,6 +47,10 @@ Create a file in `gas_server/agents`, for example:
 ```text
 gas_server/agents/my_new_agent.py
 ```
+
+For examples, browse the existing
+[agent implementations](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/agents)
+and the [included agent guide](included_agents.md).
 
 New agents must inherit from `GeoAgent` and implement the standard `run()`
 method. 
@@ -250,6 +255,10 @@ Create:
 ```text
 gas_server/capabilities/my_new_agent.json
 ```
+
+For examples, browse the existing
+[capability documents](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/capabilities)
+and the [GAS interface guide](gas_interfaces.md).
 
 Use the same `agent_id` everywhere: the agent class, service file, capability
 document name, registry key, route, and runtime data folder. There is no

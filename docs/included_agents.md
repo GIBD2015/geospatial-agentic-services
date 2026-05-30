@@ -15,20 +15,20 @@ and capability document.
 
 | Agent ID | Agent Name | Main Purpose | Implementation Pattern | Inputs | Primary Outputs |
 |---|---|---|---|---|---|
-| `geospatial_data_retrieval_agent` | Geospatial Data Retrieval Agent | Retrieves one or more geospatial datasets from supported external sources. | Model-assisted request decomposition, source selection, and code generation using data-source handbooks. | Optional input datasets. | One or more GeoPackage, GeoJSON, GeoTIFF, Shapefile, CSV, or source-specific files. |
-| `usgs_earthquake_agent` | USGS Earthquake Agent | Retrieves, maps, summarizes, monitors, and reports earthquake activity from USGS catalog and real-time feeds. | Deterministic USGS/geospatial tools with optional LLM-assisted tool planning. | Optional input datasets. | Earthquake datasets, event tables, maps, grid summaries, buffers, alert summaries, and reports. |
-| `pasda_agent` | PASDA Discovery Agent | Finds and downloads datasets from PASDA. | Repository-specific discovery workflow with model-assisted search and packaging. | Optional input datasets. | GeoPackage, GeoJSON, or source-specific PASDA files. |
-| `geospatial_data_inspection_agent` | Geospatial Data Inspection Agent | Checks vector, raster, and tabular datasets for quality and workflow readiness. | Deterministic inspection plus optional LLM-assisted interpretation. | Required input datasets. | TXT and HTML inspection reports. |
-| `exploratory_spatial_data_analysis_agent` | Exploratory Spatial Data Analysis Agent | Profiles tabular and geospatial datasets to summarize distributions, missingness, correlations, categories, geometry, and lightweight spatial patterns. | LLM-generated ESDA scripts with deterministic pandas/geopandas/matplotlib fallback. | Required input datasets. | HTML and TXT ESDA reports plus chart images. |
-| `geospatial_workflow_planning_agent` | Geospatial Workflow Planning Agent | Discovers GAS capabilities and plans client-side service chains. | Capability-aware LLM planning with JSON, Markdown, code, notebook, and graph artifacts. | Optional input datasets and optional GAS GetCapabilities URLs. | Workflow plan JSON, Markdown, optional Python, notebook, and HTML graph. |
-| `spatiotemporal_conflict_event_agent` | Spatiotemporal Conflict Event Layer Agent | Converts unstructured conflict reports or structured event tables into standardized, GIS-ready spatiotemporal event layers. | Structured table normalization with optional LLM extraction and optional OpenCage geocoding. | Optional input datasets or task text. | CSV event table, GeoJSON point layer, TXT/HTML reports, and optional HTML map. |
-| `vector_analysis_agent` | Vector Analysis Agent | Performs vector joins, buffers, clips, intersections, filtering, and aggregation. | Deterministic fast paths for common operations plus model-backed fallback. | Required input datasets. | GeoPackage, GeoJSON, or CSV. |
-| `raster_agent` | Raster Agent | Performs raster and mixed raster-vector analysis. | Code-driven workflow with persistent runtime registry. | Required input datasets. | GeoTIFF, GeoPackage, GeoJSON, or CSV. |
-| `spatial_analysis_agent` | Spatial Analysis Agent | Builds and executes an end-to-end geoprocessing workflow from input datasets and a natural-language task. | LLM-designed NetworkX workflow DAG, per-operation code generation, assembly, and sandboxed execution. | Required input datasets. | GeoPackage, GeoJSON, CSV, PNG, or HTML workflow results. |
-| `map_projection_agent` | Map Projection Agent | Reprojects geospatial datasets between coordinate reference systems. | Deterministic local CRS selection and reprojection with pyproj/geopandas. | Required input datasets. | GeoPackage, GeoJSON, GeoTIFF, or Shapefile. |
-| `mapping_agent` | Mapping Agent | Creates static maps and charts from prepared datasets. | Visualization workflow using geospatial plotting libraries. | Required input datasets. | PNG maps or charts. |
-| `web_mapping_app_agent` | Web Mapping App Agent | Creates browser-ready web mapping apps from vector, raster, or tabular geospatial data. | LLM-assisted app design and code generation with deterministic fallback behavior. | Required input datasets. | HTML web mapping applications. |
-| `spatial_statistics_agent` | Spatial Statistics Agent | Runs PySAL-based spatial statistics and modeling workflows. | LLM-assisted PySAL method selection, code generation, and report generation. | Required input datasets. | TXT and HTML reports, plus optional maps or charts. |
+| [`geospatial_data_retrieval_agent`](#geospatial-data-retrieval-agent) | Geospatial Data Retrieval Agent | Retrieves one or more geospatial datasets from supported external sources. | Model-assisted request decomposition, source selection, and code generation using data-source handbooks. | Optional input datasets. | One or more GeoPackage, GeoJSON, GeoTIFF, Shapefile, CSV, or source-specific files. |
+| [`usgs_earthquake_agent`](#usgs-earthquake-agent) | USGS Earthquake Agent | Retrieves, maps, summarizes, monitors, and reports earthquake activity from USGS catalog and real-time feeds. | Deterministic USGS/geospatial tools with optional LLM-assisted tool planning. | Optional input datasets. | Earthquake datasets, event tables, maps, grid summaries, buffers, alert summaries, and reports. |
+| [`pasda_agent`](#pasda-discovery-agent) | PASDA Discovery Agent | Finds and downloads datasets from PASDA. | Repository-specific discovery workflow with model-assisted search and packaging. | Optional input datasets. | GeoPackage, GeoJSON, or source-specific PASDA files. |
+| [`geospatial_data_inspection_agent`](#geospatial-data-inspection-agent) | Geospatial Data Inspection Agent | Checks vector, raster, and tabular datasets for quality and workflow readiness. | Deterministic inspection plus optional LLM-assisted interpretation. | Required input datasets. | TXT and HTML inspection reports. |
+| [`exploratory_spatial_data_analysis_agent`](#exploratory-spatial-data-analysis-agent) | Exploratory Spatial Data Analysis Agent | Profiles tabular and geospatial datasets to summarize distributions, missingness, correlations, categories, geometry, and lightweight spatial patterns. | LLM-generated ESDA scripts with deterministic pandas/geopandas/matplotlib fallback. | Required input datasets. | HTML and TXT ESDA reports plus chart images. |
+| [`geospatial_workflow_planning_agent`](#geospatial-workflow-planning-agent) | Geospatial Workflow Planning Agent | Discovers GAS capabilities and plans client-side service chains. | Capability-aware LLM planning with JSON, Markdown, code, notebook, and graph artifacts. | Optional input datasets and optional GAS GetCapabilities URLs. | Workflow plan JSON, Markdown, optional Python, notebook, and HTML graph. |
+| [`spatiotemporal_conflict_event_agent`](#spatiotemporal-conflict-event-layer-agent) | Spatiotemporal Conflict Event Layer Agent | Converts unstructured conflict reports or structured event tables into standardized, GIS-ready spatiotemporal event layers. | Structured table normalization with optional LLM extraction and optional OpenCage geocoding. | Optional input datasets or task text. | CSV event table, GeoJSON point layer, TXT/HTML reports, and optional HTML map. |
+| [`vector_analysis_agent`](#vector-analysis-agent) | Vector Analysis Agent | Performs vector joins, buffers, clips, intersections, filtering, and aggregation. | Deterministic fast paths for common operations plus model-backed fallback. | Required input datasets. | GeoPackage, GeoJSON, or CSV. |
+| [`raster_agent`](#raster-agent) | Raster Agent | Performs raster and mixed raster-vector analysis. | Code-driven workflow with persistent runtime registry. | Required input datasets. | GeoTIFF, GeoPackage, GeoJSON, or CSV. |
+| [`spatial_analysis_agent`](#spatial-analysis-agent) | Spatial Analysis Agent | Builds and executes an end-to-end geoprocessing workflow from input datasets and a natural-language task. | LLM-designed NetworkX workflow DAG, per-operation code generation, assembly, and sandboxed execution. | Required input datasets. | GeoPackage, GeoJSON, CSV, PNG, or HTML workflow results. |
+| [`map_projection_agent`](#map-projection-agent) | Map Projection Agent | Reprojects geospatial datasets between coordinate reference systems. | Deterministic local CRS selection and reprojection with pyproj/geopandas. | Required input datasets. | GeoPackage, GeoJSON, GeoTIFF, or Shapefile. |
+| [`mapping_agent`](#mapping-agent) | Mapping Agent | Creates static maps and charts from prepared datasets. | Visualization workflow using geospatial plotting libraries. | Required input datasets. | PNG maps or charts. |
+| [`web_mapping_app_agent`](#web-mapping-app-agent) | Web Mapping App Agent | Creates browser-ready web mapping apps from vector, raster, or tabular geospatial data. | LLM-assisted app design and code generation with deterministic fallback behavior. | Required input datasets. | HTML web mapping applications. |
+| [`spatial_statistics_agent`](#spatial-statistics-agent) | Spatial Statistics Agent | Runs PySAL-based spatial statistics and modeling workflows. | LLM-assisted PySAL method selection, code generation, and report generation. | Required input datasets. | TXT and HTML reports, plus optional maps or charts. |
 
 ## Agent Details
 
@@ -51,10 +51,10 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/geospatial_data_retrieval_agent.py`
-- `gas_server/services/geospatial_data_retrieval_agent_service.py`
-- `gas_server/capabilities/geospatial_data_retrieval_agent.json`
-- `gas_server/agents/geospatial_data_retrieval_handbooks/`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/geospatial_data_retrieval_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/geospatial_data_retrieval_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/geospatial_data_retrieval_agent.json)
+- [retrieval handbooks](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/gas_server/agents/geospatial_data_retrieval_handbooks)
 
 ### USGS Earthquake Agent
 
@@ -76,9 +76,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/usgs_earthquake_agent.py`
-- `gas_server/services/usgs_earthquake_agent_service.py`
-- `gas_server/capabilities/usgs_earthquake_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/usgs_earthquake_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/usgs_earthquake_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/usgs_earthquake_agent.json)
 
 ### PASDA Discovery Agent
 
@@ -94,9 +94,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/pasda_agent.py`
-- `gas_server/services/pasda_agent_service.py`
-- `gas_server/capabilities/pasda_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/pasda_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/pasda_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/pasda_agent.json)
 
 ### Geospatial Data Inspection Agent
 
@@ -112,9 +112,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/geospatial_data_inspection_agent.py`
-- `gas_server/services/geospatial_data_inspection_agent_service.py`
-- `gas_server/capabilities/geospatial_data_inspection_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/geospatial_data_inspection_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/geospatial_data_inspection_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/geospatial_data_inspection_agent.json)
 
 ### Exploratory Spatial Data Analysis Agent
 
@@ -135,9 +135,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/exploratory_spatial_data_analysis_agent.py`
-- `gas_server/services/exploratory_spatial_data_analysis_agent_service.py`
-- `gas_server/capabilities/exploratory_spatial_data_analysis_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/exploratory_spatial_data_analysis_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/exploratory_spatial_data_analysis_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/exploratory_spatial_data_analysis_agent.json)
 
 ### Geospatial Workflow Planning Agent
 
@@ -155,9 +155,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/geospatial_workflow_planning_agent.py`
-- `gas_server/services/geospatial_workflow_planning_agent_service.py`
-- `gas_server/capabilities/geospatial_workflow_planning_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/geospatial_workflow_planning_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/geospatial_workflow_planning_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/geospatial_workflow_planning_agent.json)
 
 ### Spatiotemporal Conflict Event Layer Agent
 
@@ -181,9 +181,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/spatiotemporal_conflict_event_agent.py`
-- `gas_server/services/spatiotemporal_conflict_event_agent_service.py`
-- `gas_server/capabilities/spatiotemporal_conflict_event_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/spatiotemporal_conflict_event_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/spatiotemporal_conflict_event_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/spatiotemporal_conflict_event_agent.json)
 
 ### Vector Analysis Agent
 
@@ -201,9 +201,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/vector_analysis_agent.py`
-- `gas_server/services/vector_analysis_agent_service.py`
-- `gas_server/capabilities/vector_analysis_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/vector_analysis_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/vector_analysis_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/vector_analysis_agent.json)
 
 ### Raster Agent
 
@@ -220,9 +220,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/raster_agent.py`
-- `gas_server/services/raster_agent_service.py`
-- `gas_server/capabilities/raster_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/raster_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/raster_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/raster_agent.json)
 
 ### Spatial Analysis Agent
 
@@ -240,9 +240,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/spatial_analysis_agent.py`
-- `gas_server/services/spatial_analysis_agent_service.py`
-- `gas_server/capabilities/spatial_analysis_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/spatial_analysis_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/spatial_analysis_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/spatial_analysis_agent.json)
 
 ### Map Projection Agent
 
@@ -260,9 +260,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/map_projection_agent.py`
-- `gas_server/services/map_projection_agent_service.py`
-- `gas_server/capabilities/map_projection_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/map_projection_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/map_projection_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/map_projection_agent.json)
 
 ### Mapping Agent
 
@@ -278,9 +278,9 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/mapping_agent.py`
-- `gas_server/services/mapping_agent_service.py`
-- `gas_server/capabilities/mapping_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/mapping_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/mapping_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/mapping_agent.json)
 
 ### Web Mapping App Agent
 
@@ -298,13 +298,13 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/web_mapping_app_agent.py`
-- `gas_server/services/web_mapping_app_agent_service.py`
-- `gas_server/capabilities/web_mapping_app_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/web_mapping_app_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/web_mapping_app_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/web_mapping_app_agent.json)
 
 Example notebook:
 
-- `examples_for_using_gas_services/pa_health_food_hospitals_web_mapping_app_workflow.ipynb`
+- [PA health, food, and hospitals web mapping workflow](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/examples_for_using_gas_services/pa_health_food_hospitals_web_mapping_app_workflow.ipynb)
 
 ### Spatial Statistics Agent
 
@@ -320,27 +320,27 @@ Useful developer pattern:
 
 Files:
 
-- `gas_server/agents/spatial_statistics_agent.py`
-- `gas_server/services/spatial_statistics_agent_service.py`
-- `gas_server/capabilities/spatial_statistics_agent.json`
+- [agent implementation](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/agents/spatial_statistics_agent.py)
+- [service wrapper](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/services/spatial_statistics_agent_service.py)
+- [capability document](https://github.com/GIBD2015/geospatial-agentic-services/blob/main/gas_server/capabilities/spatial_statistics_agent.json)
 
 ## Choosing An Example To Follow
 
 Use these examples as starting points:
 
-- Data retrieval from external sources: `geospatial_data_retrieval_agent`
-- Focused USGS earthquake retrieval, mapping, alerts, and reports: `usgs_earthquake_agent`
-- Repository-specific search and download: `pasda_agent`
-- Input quality checks and workflow readiness: `geospatial_data_inspection_agent`
-- Exploratory descriptive analysis and charts: `exploratory_spatial_data_analysis_agent`
-- Conflict report or event-table preprocessing: `spatiotemporal_conflict_event_agent`
-- End-to-end LLM-designed spatial workflows: `spatial_analysis_agent`
-- Deterministic vector operations: `vector_analysis_agent`
-- Raster or mixed raster-vector analysis: `raster_agent`
-- CRS transformation: `map_projection_agent`
-- Static visualization: `mapping_agent`
-- Web mapping app development: `web_mapping_app_agent`
-- Spatial statistics and modeling: `spatial_statistics_agent`
+- Data retrieval from external sources: [`geospatial_data_retrieval_agent`](#geospatial-data-retrieval-agent)
+- Focused USGS earthquake retrieval, mapping, alerts, and reports: [`usgs_earthquake_agent`](#usgs-earthquake-agent)
+- Repository-specific search and download: [`pasda_agent`](#pasda-discovery-agent)
+- Input quality checks and workflow readiness: [`geospatial_data_inspection_agent`](#geospatial-data-inspection-agent)
+- Exploratory descriptive analysis and charts: [`exploratory_spatial_data_analysis_agent`](#exploratory-spatial-data-analysis-agent)
+- Conflict report or event-table preprocessing: [`spatiotemporal_conflict_event_agent`](#spatiotemporal-conflict-event-layer-agent)
+- End-to-end LLM-designed spatial workflows: [`spatial_analysis_agent`](#spatial-analysis-agent)
+- Deterministic vector operations: [`vector_analysis_agent`](#vector-analysis-agent)
+- Raster or mixed raster-vector analysis: [`raster_agent`](#raster-agent)
+- CRS transformation: [`map_projection_agent`](#map-projection-agent)
+- Static visualization: [`mapping_agent`](#mapping-agent)
+- Web mapping app development: [`web_mapping_app_agent`](#web-mapping-app-agent)
+- Spatial statistics and modeling: [`spatial_statistics_agent`](#spatial-statistics-agent)
 
 For the step-by-step workflow, see
 [adding_an_agent_service.md](adding_an_agent_service.md).

@@ -50,7 +50,9 @@ A typical VS Code workflow is:
 3. Open the integrated terminal.
 4. Start the GAS server from the repository root.
 5. Run tests from the same environment.
-6. Open notebooks in `examples_for_using_gas_services/` and select the same Python environment.
+6. Open the
+   [example notebooks](https://github.com/GIBD2015/geospatial-agentic-services/tree/main/examples_for_using_gas_services)
+   and select the same Python environment.
 
 Useful commands:
 
