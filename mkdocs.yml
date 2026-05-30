@@ -18,22 +18,19 @@ theme:
 
 nav:
   - Home: index.md
-  - Choose Your Path:
-      - Use Published GAS Services: gas_client_sdk.md
-      - Add A Geospatial Agentic Service: adding_an_agent_service.md
-      - Host A GAS Server: development_and_deployment_environment.md
+  - Getting Started:
+      - Use GAS Services: gas_client_sdk.md
+      - Add an Agent Service: adding_an_agent_service.md
+      - Host a GAS Server: development_and_deployment_environment.md
       - Improve the Codebase: contributing.md
-  - Concepts:
+  - Core Documentation:
       - GAS Interfaces: gas_interfaces.md
-      - GAS Server Framework: gas_server_architecture.md
-      - Included Agents: included_agents.md
-  - Guides:
-      - GAS Client SDK: gas_client_sdk.md
+      - Server Architecture: gas_server_architecture.md
       - GAS Registry: gas_registry.md
-      - Development and Deployment: development_and_deployment_environment.md
-  - Reference:
-      - Adding an Agent Service: adding_an_agent_service.md
-      - Contributing: contributing.md
+      - Included Agents: included_agents.md
+  - Examples:
+      - Notebook Examples: examples.md
+  - Project:
       - Security: security.md
 
 markdown_extensions:
