@@ -31,7 +31,8 @@ The included server framework handles service discovery, task execution,
 streaming progress, artifact delivery, and response normalization. The
 [included agents](docs/included_agents.md) demonstrate how geospatial
 workflows such as data retrieval, workflow planning, mapping, raster analysis,
-vector analysis, data inspection, and spatial statistics can be exposed as
+vector analysis, data inspection, conflict-event preprocessing, and spatial
+statistics can be exposed as
 interoperable GAS services. These agents are provided as reference examples,
 not as a prescribed model for how all geospatial agents should be implemented.
 
@@ -303,8 +304,8 @@ token flow, and deployment notes.
 ## Example Notebooks
 
 Example workflows are available in [examples_for_using_gas_services](examples_for_using_gas_services).
-These notebooks are not intended to demonstrate the capabilities of the
-included agents. They show how geospatial agents with different
+These notebooks demonstrate the capabilities of the
+included agents and show how geospatial agents with different
 capabilities, hosted on distributed GAS servers, can be published
 as interoperable agentic services, described, discovered, invoked, and composed into
 reproducible geospatial workflows.
@@ -351,8 +352,9 @@ workflow rather than to benchmark or promote any specific agent implementation.
   synchronous, asynchronous, and streaming request modes in one workflow.
 - [all_agents_streaming_workflow.ipynb](examples_for_using_gas_services/all_agents_streaming_workflow.ipynb)
   exercises every published GAS agent with streamed calls and collects the
-  resulting retrieval, inspection, ESDA, projection, vector, raster, spatial
-  analysis, statistics, static map, and web app artifacts.
+  resulting retrieval, inspection, ESDA, conflict-event layer, projection,
+  vector, raster, spatial analysis, statistics, static map, and web app
+  artifacts.
 
 The folder also includes
 [geospatial_workflow_planning_agent_app.html](examples_for_using_gas_services/geospatial_workflow_planning_agent_app.html),

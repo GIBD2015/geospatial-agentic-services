@@ -4,8 +4,8 @@ This GAS server includes working geospatial agents that also serve as concrete
 implementation examples for developers. They show different ways to build GAS
 services: deterministic geospatial workflows, model-assisted code execution,
 data retrieval, data inspection, exploratory spatial data analysis, workflow
-planning, mapping, raster processing, spatial analysis, vector analysis, and
-spatial statistics.
+planning, mapping, raster processing, spatial analysis, spatiotemporal
+conflict-event preprocessing, vector analysis, and spatial statistics.
 
 When adding a new agent, start by finding the included agent that is closest to
 your intended design. Then inspect its implementation file, service wrapper,
@@ -21,6 +21,7 @@ and capability document.
 | `geospatial_data_inspection_agent` | Geospatial Data Inspection Agent | Checks vector, raster, and tabular datasets for quality and workflow readiness. | Deterministic inspection plus optional LLM-assisted interpretation. | Required input datasets. | TXT and HTML inspection reports. |
 | `exploratory_spatial_data_analysis_agent` | Exploratory Spatial Data Analysis Agent | Profiles tabular and geospatial datasets to summarize distributions, missingness, correlations, categories, geometry, and lightweight spatial patterns. | LLM-generated ESDA scripts with deterministic pandas/geopandas/matplotlib fallback. | Required input datasets. | HTML and TXT ESDA reports plus chart images. |
 | `geospatial_workflow_planning_agent` | Geospatial Workflow Planning Agent | Discovers GAS capabilities and plans client-side service chains. | Capability-aware LLM planning with JSON, Markdown, code, notebook, and graph artifacts. | Optional input datasets and optional GAS GetCapabilities URLs. | Workflow plan JSON, Markdown, optional Python, notebook, and HTML graph. |
+| `spatiotemporal_conflict_event_agent` | Spatiotemporal Conflict Event Layer Agent | Converts unstructured conflict reports or structured event tables into standardized, GIS-ready spatiotemporal event layers. | Structured table normalization with optional LLM extraction and optional OpenCage geocoding. | Optional input datasets or task text. | CSV event table, GeoJSON point layer, TXT/HTML reports, and optional HTML map. |
 | `vector_analysis_agent` | Vector Analysis Agent | Performs vector joins, buffers, clips, intersections, filtering, and aggregation. | Deterministic fast paths for common operations plus model-backed fallback. | Required input datasets. | GeoPackage, GeoJSON, or CSV. |
 | `raster_agent` | Raster Agent | Performs raster and mixed raster-vector analysis. | Code-driven workflow with persistent runtime registry. | Required input datasets. | GeoTIFF, GeoPackage, GeoJSON, or CSV. |
 | `spatial_analysis_agent` | Spatial Analysis Agent | Builds and executes an end-to-end geoprocessing workflow from input datasets and a natural-language task. | LLM-designed NetworkX workflow DAG, per-operation code generation, assembly, and sandboxed execution. | Required input datasets. | GeoPackage, GeoJSON, CSV, PNG, or HTML workflow results. |
@@ -157,6 +158,32 @@ Files:
 - `gas_server/agents/geospatial_workflow_planning_agent.py`
 - `gas_server/services/geospatial_workflow_planning_agent_service.py`
 - `gas_server/capabilities/geospatial_workflow_planning_agent.json`
+
+### Spatiotemporal Conflict Event Layer Agent
+
+`spatiotemporal_conflict_event_agent` converts unstructured conflict reports or
+structured event-like tables into standardized spatiotemporal event records.
+It extracts or normalizes event locations, dates, categories, descriptions,
+evidence quotes, source fields, and coordinates, then writes GIS-ready CSV,
+GeoJSON, TXT, HTML, and optional Folium map artifacts for downstream GAS
+mapping, web mapping, spatial analysis, and spatial statistics workflows.
+
+Useful developer pattern:
+
+- Treat messy domain text or tables as a preprocessing step for downstream GIS
+  agents.
+- Keep structured table normalization deterministic when fields and coordinates
+  are already present.
+- Use model-backed extraction only for unstructured text and optional OpenCage
+  geocoding only when coordinates are missing.
+- Preserve records without valid coordinates in CSV and reports while excluding
+  them from point GeoJSON output.
+
+Files:
+
+- `gas_server/agents/spatiotemporal_conflict_event_agent.py`
+- `gas_server/services/spatiotemporal_conflict_event_agent_service.py`
+- `gas_server/capabilities/spatiotemporal_conflict_event_agent.json`
 
 ### Vector Analysis Agent
 
@@ -306,6 +333,7 @@ Use these examples as starting points:
 - Repository-specific search and download: `pasda_agent`
 - Input quality checks and workflow readiness: `geospatial_data_inspection_agent`
 - Exploratory descriptive analysis and charts: `exploratory_spatial_data_analysis_agent`
+- Conflict report or event-table preprocessing: `spatiotemporal_conflict_event_agent`
 - End-to-end LLM-designed spatial workflows: `spatial_analysis_agent`
 - Deterministic vector operations: `vector_analysis_agent`
 - Raster or mixed raster-vector analysis: `raster_agent`
