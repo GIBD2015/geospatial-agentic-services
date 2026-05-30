@@ -21,6 +21,10 @@
   font-weight: 700;
 }
 
+.gas-header-source {
+  margin-right: 0.5rem;
+}
+
 .md-content h2 {
   color: #0067b1;
   font-size: 1.25rem;

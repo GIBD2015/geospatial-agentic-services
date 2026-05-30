@@ -6,6 +6,7 @@ repo_name: GIBD2015/geospatial-agentic-services
 
 theme:
   name: material
+  custom_dir: docs/overrides
   logo: assets/gas-logo.png
   favicon: assets/gas-logo.png
   features:
@@ -55,3 +56,7 @@ plugins:
 
 extra_css:
   - assets/stylesheets/extra.css
+
+extra:
+  gibd_lab_url: https://giscience.psu.edu/
+  gibd_lab_name: GIBD Lab
