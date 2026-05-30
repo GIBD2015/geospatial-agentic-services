@@ -29,7 +29,15 @@
 
 .gas-header-source .md-source {
   width: auto;
+  max-width: none;
   padding-right: 0.4rem;
+}
+
+.gas-header-source .md-source__repository {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .gas-header-source + .md-header__source {
