@@ -1,8 +1,8 @@
-# Geospatial Agentic Services
+<img align="left" src="assets/gas-logo.png" alt="Geospatial Agentic Services logo" width="125">
 
-<p align="center">
-  <img src="assets/gas-logo.png" alt="Geospatial Agentic Services logo" width="220">
-</p>
+# GAS - Geospatial Agentic Services
+
+<br clear="left">
 
 Geospatial Agentic Services (GAS) is an interoperability framework for
 discovering, describing, invoking, composing, validating, and reusing
@@ -28,6 +28,8 @@ documents.
 
 For the broader conceptual framework, see the
 [GAS paper](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence).
+
+[View the GitHub source repository](https://github.com/GIBD2015/geospatial-agentic-services).
 
 This documentation site is organized around four entry points and a compact
 set of core references.

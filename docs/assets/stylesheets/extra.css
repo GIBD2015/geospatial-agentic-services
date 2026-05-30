@@ -1,0 +1,16 @@
+.md-content h2 {
+  color: #0067b1;
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin-top: 2.4rem;
+}
+
+.md-content h2::after {
+  content: "";
+  display: block;
+  width: 3.5rem;
+  height: 0.18rem;
+  margin-top: 0.35rem;
+  background: #16b8bd;
+  border-radius: 999px;
+}

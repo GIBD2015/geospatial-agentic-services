@@ -7,6 +7,7 @@
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.10%2B-blue.svg" alt="Python 3.10+"></a>
   <a href="https://pypi.org/project/gas-client/"><img src="https://img.shields.io/pypi/v/gas-client.svg" alt="GAS Client on PyPI"></a>
   <a href="http://geospatial-agentic-services.online/registry"><img src="https://img.shields.io/badge/GAS-Registry-256b7f.svg" alt="GAS Registry"></a>
+  <a href="https://GIBD2015.github.io/geospatial-agentic-services/"><img src="https://img.shields.io/badge/GAS-Docs-0067b1.svg" alt="GAS Documentation"></a>
   <a href="https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence"><img src="https://img.shields.io/badge/GAS-Paper-green.svg" alt="GAS Paper"></a>
   <a href="https://giscience.psu.edu/"><img src="https://img.shields.io/badge/GIBD-Lab-lightgrey.svg" alt="GIBD Lab"></a>
 </p>
@@ -35,6 +36,9 @@ geospatial agents and services.
 For the conceptual framework behind this implementation, see the GAS paper:
 [Geospatial Agentic Services: A Framework for Interoperable Geospatial
 Intelligence](https://www.researchgate.net/publication/404738967_Geospatial_Agentic_Services_A_Framework_for_Interoperable_Geospatial_Intelligence).
+
+The HTML documentation site is available at
+[https://GIBD2015.github.io/geospatial-agentic-services/](https://GIBD2015.github.io/geospatial-agentic-services/).
 
 ## What GAS Is
 
